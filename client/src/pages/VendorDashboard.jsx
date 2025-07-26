@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import apiService from "../services/api";
+import Header from "../components/Header";
 
 const VendorDashboard = () => {
   const { t } = useTranslation();
@@ -102,66 +103,70 @@ const VendorDashboard = () => {
   }
 
   return (
-    <div className="max-w-6xl mx-auto">
-      <div className="flex justify-between items-center mb-6">
-        <h2 className="text-3xl font-semibold">{t("vendor_dashboard")}</h2>
-        <div className="text-sm text-gray-600">Cart: {cart.length} items</div>
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Products Section */}
-        <div className="lg:col-span-2">
-          <h3 className="text-xl font-semibold mb-4">Available Products</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {products.map((product) => (
-              <div
-                key={product._id}
-                className="border rounded-lg p-4 hover:shadow-md"
-              >
-                <h4 className="font-semibold">{product.name}</h4>
-                <p className="text-gray-600">
-                  Supplier: {product.supplierId?.name || "Unknown"}
-                </p>
-                <p className="text-green-600 font-semibold">
-                  ₹{product.price}/{product.unit}
-                </p>
-                <p className="text-sm text-gray-500">
-                  Stock: {product.stock} {product.unit}
-                </p>
-                <button
-                  onClick={() => addToCart(product)}
-                  className="mt-2 bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-blue-900 to-purple-900 flex flex-col items-center p-4 md:p-8">
+      {/* <Header /> */}
+      <div className="w-full max-w-6xl bg-transparent rounded-3xl shadow-2xl p-6 md:p-8 mt-4">
+        {/* ...existing code... */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          {/* Products Section */}
+          <div className="lg:col-span-2">
+            <h3 className="text-2xl font-bold mb-6 text-blue-200">
+              Available Products
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {products.map((product) => (
+                <div
+                  key={product._id}
+                  className="border-2 border-blue-700 rounded-2xl p-6 bg-blue-900 bg-opacity-70 hover:shadow-xl transition-shadow"
                 >
-                  Add to Cart
-                </button>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Cart Section */}
-        <div className="bg-gray-50 p-4 rounded-lg">
-          <h3 className="text-xl font-semibold mb-4">Your Cart</h3>
-          {cart.length === 0 ? (
-            <p className="text-gray-500">No items in cart</p>
-          ) : (
-            <div>
-              {cart.map((item, index) => (
-                <div key={index} className="border-b py-2">
-                  <p className="font-medium">{item.name}</p>
-                  <p className="text-sm text-gray-600">
-                    ₹{item.price}/{item.unit}
+                  <h4 className="font-bold text-lg mb-2 text-blue-100">
+                    {product.name}
+                  </h4>
+                  <p className="text-blue-200 mb-1">
+                    Supplier: {product.supplierId?.name || "Unknown"}
                   </p>
+                  <p className="text-green-200 font-semibold mb-1">
+                    {product.price}/{product.unit}
+                  </p>
+                  <p className="text-sm text-blue-300 mb-2">
+                    Stock: {product.stock} {product.unit}
+                  </p>
+                  <button
+                    onClick={() => addToCart(product)}
+                    className="mt-2 bg-gradient-to-r from-blue-700 via-purple-700 to-pink-700 text-white px-6 py-2 rounded-full font-bold shadow-lg hover:scale-105 transition-transform duration-200"
+                  >
+                    Add to Cart
+                  </button>
                 </div>
               ))}
-              <button
-                onClick={placeOrder}
-                className="mt-4 w-full bg-green-500 text-white py-2 rounded hover:bg-green-600"
-              >
-                Place Order
-              </button>
             </div>
-          )}
+          </div>
+          {/* Cart Section */}
+          <div className="bg-gradient-to-br from-blue-900 via-purple-900 to-pink-900 p-6 rounded-2xl shadow-xl">
+            <h3 className="text-2xl font-bold mb-6 text-blue-100">Your Cart</h3>
+            {cart.length === 0 ? (
+              <p className="text-blue-300">No items in cart</p>
+            ) : (
+              <div>
+                {cart.map((item, index) => (
+                  <div key={index} className="border-b border-blue-700 py-3">
+                    <p className="font-bold text-lg text-blue-100">
+                      {item.name}
+                    </p>
+                    <p className="text-sm text-blue-200">
+                      {item.price}/{item.unit}
+                    </p>
+                  </div>
+                ))}
+                <button
+                  onClick={placeOrder}
+                  className="mt-6 w-full bg-gradient-to-r from-green-700 via-blue-700 to-purple-700 text-white py-3 rounded-full font-bold text-xl shadow-lg hover:scale-105 transition-transform duration-200"
+                >
+                  Place Order
+                </button>
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </div>

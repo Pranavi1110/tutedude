@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import apiService from "../services/api";
+import Header from "../components/Header";
 
 const SupplierDashboard = () => {
   const { t } = useTranslation();
@@ -43,7 +44,6 @@ const SupplierDashboard = () => {
       alert("Please fill all fields");
       return;
     }
-
     try {
       const productData = {
         name: newProduct.name,
@@ -54,7 +54,6 @@ const SupplierDashboard = () => {
         description: "Fresh product",
         unit: "kg",
       };
-
       await apiService.supplier.addProduct(productData);
       setNewProduct({ name: "", price: "", stock: "" });
       fetchData(); // Refresh the data
@@ -93,126 +92,138 @@ const SupplierDashboard = () => {
   }
 
   return (
-    <div className="max-w-6xl mx-auto">
-      <h2 className="text-3xl font-semibold mb-6">{t("supplier_dashboard")}</h2>
-
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Products Management */}
-        <div>
-          <h3 className="text-xl font-semibold mb-4">Manage Products</h3>
-
-          {/* Add New Product */}
-          <div className="bg-gray-50 p-4 rounded-lg mb-4">
-            <h4 className="font-semibold mb-2">Add New Product</h4>
-            <div className="grid grid-cols-3 gap-2">
-              <input
-                type="text"
-                placeholder="Product Name"
-                value={newProduct.name}
-                onChange={(e) =>
-                  setNewProduct({ ...newProduct, name: e.target.value })
-                }
-                className="border rounded px-2 py-1"
-              />
-              <input
-                type="number"
-                placeholder="Price"
-                value={newProduct.price}
-                onChange={(e) =>
-                  setNewProduct({ ...newProduct, price: e.target.value })
-                }
-                className="border rounded px-2 py-1"
-              />
-              <input
-                type="number"
-                placeholder="Stock"
-                value={newProduct.stock}
-                onChange={(e) =>
-                  setNewProduct({ ...newProduct, stock: e.target.value })
-                }
-                className="border rounded px-2 py-1"
-              />
-            </div>
-            <button
-              onClick={addProduct}
-              className="mt-2 bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600"
-            >
-              Add Product
-            </button>
-          </div>
-
-          {/* Products List */}
-          <div className="space-y-2">
-            {products.map((product) => (
-              <div
-                key={product._id}
-                className="border rounded p-3 flex justify-between items-center"
-              >
-                <div>
-                  <h4 className="font-semibold">{product.name}</h4>
-                  <p className="text-sm text-gray-600">
-                    ₹{product.price}/{product.unit} | Stock: {product.stock}
-                    {product.unit}
-                  </p>
-                </div>
-                <span className="text-green-600 text-sm">
-                  {product.isAvailable ? "In Stock" : "Out of Stock"}
-                </span>
+    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-blue-900 to-purple-900 flex flex-col items-center p-4 md:p-8">
+      {/* <Header /> */}
+      <div className="w-full max-w-6xl bg-transparent rounded-3xl shadow-2xl p-6 md:p-8 mt-4">
+        <h2 className="text-3xl font-semibold mb-6 text-blue-100">
+          {t("supplier_dashboard")}
+        </h2>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Products Management */}
+          <div>
+            <h3 className="text-xl font-semibold mb-4 text-purple-200">
+              Manage Products
+            </h3>
+            {/* Add New Product */}
+            <div className="bg-purple-900 bg-opacity-70 p-4 rounded-lg mb-4">
+              <h4 className="font-semibold mb-2 text-purple-100">
+                Add New Product
+              </h4>
+              <div className="grid grid-cols-3 gap-2">
+                <input
+                  type="text"
+                  placeholder="Product Name"
+                  value={newProduct.name}
+                  onChange={(e) =>
+                    setNewProduct({ ...newProduct, name: e.target.value })
+                  }
+                  className="border rounded px-2 py-1 bg-gray-900 text-purple-100 border-purple-700"
+                />
+                <input
+                  type="number"
+                  placeholder="Price"
+                  value={newProduct.price}
+                  onChange={(e) =>
+                    setNewProduct({ ...newProduct, price: e.target.value })
+                  }
+                  className="border rounded px-2 py-1 bg-gray-900 text-purple-100 border-purple-700"
+                />
+                <input
+                  type="number"
+                  placeholder="Stock"
+                  value={newProduct.stock}
+                  onChange={(e) =>
+                    setNewProduct({ ...newProduct, stock: e.target.value })
+                  }
+                  className="border rounded px-2 py-1 bg-gray-900 text-purple-100 border-purple-700"
+                />
               </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Orders */}
-        <div>
-          <h3 className="text-xl font-semibold mb-4">Incoming Orders</h3>
-          <div className="space-y-3">
-            {orders.map((order) => (
-              <div key={order._id} className="border rounded p-4">
-                <div className="flex justify-between items-start mb-2">
+              <button
+                onClick={addProduct}
+                className="mt-2 bg-green-700 text-white px-4 py-2 rounded hover:bg-green-800"
+              >
+                Add Product
+              </button>
+            </div>
+            {/* Products List */}
+            <div className="space-y-2">
+              {products.map((product) => (
+                <div
+                  key={product._id}
+                  className="border rounded p-3 flex justify-between items-center bg-purple-900 bg-opacity-70 border-purple-700"
+                >
                   <div>
-                    <h4 className="font-semibold">
-                      {order.vendorId?.name || "Unknown Vendor"}
+                    <h4 className="font-semibold text-purple-100">
+                      {product.name}
                     </h4>
-                    <p className="text-sm text-gray-600">
-                      {order.items
-                        .map(
-                          (item) =>
-                            `${item.productId?.name || "Unknown"} (${
-                              item.quantity
-                            }${item.productId?.unit || "kg"})`
-                        )
-                        .join(", ")}
-                    </p>
-                    <p className="text-xs text-gray-500">
-                      {new Date(order.createdAt).toLocaleDateString()}
+                    <p className="text-sm text-purple-200">
+                      {product.price}/{product.unit} | Stock: {product.stock}
+                      {product.unit}
                     </p>
                   </div>
-                  <span
-                    className={`px-2 py-1 rounded text-xs ${
-                      order.status === "ready_for_pickup"
-                        ? "bg-green-100 text-green-800"
-                        : "bg-yellow-100 text-yellow-800"
-                    }`}
-                  >
-                    {order.status}
+                  <span className="text-green-200 text-sm">
+                    {product.isAvailable ? "In Stock" : "Out of Stock"}
                   </span>
                 </div>
-                {order.status === "pending" && (
-                  <button
-                    onClick={() => markReadyForPickup(order._id)}
-                    className="bg-blue-500 text-white px-3 py-1 rounded text-sm hover:bg-blue-600"
-                  >
-                    Mark Ready for Pickup
-                  </button>
-                )}
-              </div>
-            ))}
-            {orders.length === 0 && (
-              <p className="text-gray-500 text-center py-4">
-                No incoming orders
-              </p>
-            )}
+              ))}
+            </div>
+          </div>
+          {/* Orders */}
+          <div>
+            <h3 className="text-xl font-semibold mb-4 text-pink-200">
+              Incoming Orders
+            </h3>
+            <div className="space-y-3">
+              {orders.map((order) => (
+                <div
+                  key={order._id}
+                  className="border rounded p-4 bg-pink-900 bg-opacity-70 border-pink-700"
+                >
+                  <div className="flex justify-between items-start mb-2">
+                    <div>
+                      <h4 className="font-semibold text-pink-100">
+                        {order.vendorId?.name || "Unknown Vendor"}
+                      </h4>
+                      <p className="text-sm text-pink-200">
+                        {order.items
+                          .map(
+                            (item) =>
+                              `${item.productId?.name || "Unknown"} (${
+                                item.quantity
+                              }${item.productId?.unit || "kg"})`
+                          )
+                          .join(", ")}
+                      </p>
+                      <p className="text-xs text-pink-300">
+                        {new Date(order.createdAt).toLocaleDateString()}
+                      </p>
+                    </div>
+                    <span
+                      className={`px-2 py-1 rounded text-xs ${
+                        order.status === "ready_for_pickup"
+                          ? "bg-green-900 text-green-200"
+                          : "bg-yellow-900 text-yellow-200"
+                      }`}
+                    >
+                      {order.status}
+                    </span>
+                  </div>
+                  {order.status === "pending" && (
+                    <button
+                      onClick={() => markReadyForPickup(order._id)}
+                      className="bg-blue-700 text-white px-3 py-1 rounded text-sm hover:bg-blue-800"
+                    >
+                      Mark Ready for Pickup
+                    </button>
+                  )}
+                </div>
+              ))}
+              {orders.length === 0 && (
+                <p className="text-pink-300 text-center py-4">
+                  No incoming orders
+                </p>
+              )}
+            </div>
           </div>
         </div>
       </div>

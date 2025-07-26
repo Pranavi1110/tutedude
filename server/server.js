@@ -1,29 +1,52 @@
 const express = require("express");
 const mongoose = require("mongoose");
 const cors = require("cors");
+const session = require("express-session");
+const MongoStore = require("connect-mongo"); // optional: persist sessions in MongoDB
 require("dotenv").config();
 
 const app = express();
 
 // Middleware
-app.use(cors());
+app.use(cors({
+  origin: "http://localhost:5175",
+  credentials: true,
+}));
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// MongoDB Connection
-const MONGODB_URI =
-  process.env.MONGODB_URI || "mongodb://localhost:27017/rasachain";
-
-mongoose
-  .connect(MONGODB_URI)
-  .then(() => {
-    console.log("Connected to MongoDB");
+// ✅ SESSION middleware
+app.use(
+  session({
+    name: "connect.sid",
+    secret: process.env.SESSION_SECRET || "supersecret",
+    resave: false,
+    saveUninitialized: false,
+    cookie: {
+      httpOnly: true,
+      secure: false, // true in production with HTTPS
+      maxAge: 1000 * 60 * 60 * 24, // 1 day
+    },
+    store: MongoStore.create({
+      mongoUrl: process.env.MONGODB_URI || "mongodb://localhost:27017/rasachain",
+      collectionName: "sessions",
+    }),
   })
-  .catch((error) => {
-    console.error("MongoDB connection error:", error);
-  });
+);
 
-// Health check endpoint
+// MongoDB Connection
+mongoose.connect(process.env.MONGODB_URI || "mongodb://localhost:27017/rasachain")
+  .then(() => console.log("✅ Connected to MongoDB"))
+  .catch((error) => console.error("❌ MongoDB connection error:", error));
+
+// Routes
+app.use("/api/auth", require("./routes/auth"));
+app.use("/api/vendor", require("./routes/vendor"));
+app.use("/api/supplier", require("./routes/supplier"));
+app.use("/api/delivery", require("./routes/delivery"));
+
+// Health Check
 app.get("/api/health", (req, res) => {
   res.json({
     status: "OK",
@@ -32,56 +55,20 @@ app.get("/api/health", (req, res) => {
   });
 });
 
-// Simple test routes first
-app.get("/api/test", (req, res) => {
-  res.json({ message: "Test route working" });
-});
-
-// Routes - load them one by one to identify the issue
-try {
-  console.log("Loading vendor routes...");
-  app.use("/api/vendor", require("./routes/vendor"));
-  console.log("Vendor routes loaded successfully");
-} catch (error) {
-  console.error("Error loading vendor routes:", error);
-}
-
-try {
-  console.log("Loading supplier routes...");
-  app.use("/api/supplier", require("./routes/supplier"));
-  console.log("Supplier routes loaded successfully");
-} catch (error) {
-  console.error("Error loading supplier routes:", error);
-}
-
-try {
-  console.log("Loading delivery routes...");
-  app.use("/api/delivery", require("./routes/delivery"));
-  console.log("Delivery routes loaded successfully");
-} catch (error) {
-  console.error("Error loading delivery routes:", error);
-}
-
-// Error handling middleware
-app.use((err, req, res, next) => {
-  console.error(err.stack);
-  res.status(500).json({
-    message: "Something went wrong!",
-    error:
-      process.env.NODE_ENV === "development"
-        ? err.message
-        : "Internal server error",
-  });
-});
-
-// 404 handler
+// 404
 app.use("*", (req, res) => {
   res.status(404).json({ message: "Route not found" });
 });
 
-const PORT = process.env.PORT || 5002;
+// Error Handler
+app.use((err, req, res, next) => {
+  console.error(err.stack);
+  res.status(500).json({ message: "Internal server error" });
+});
 
+// Start Server
+const PORT = process.env.PORT || 5002;
 app.listen(PORT, () => {
-  console.log(`Server is running on port ${PORT}`);
-  console.log(`Health check: http://localhost:${PORT}/api/health`);
+  console.log(`🚀 Server running on port ${PORT}`);
+  console.log(`🔍 Health check: http://localhost:${PORT}/api/health`);
 });

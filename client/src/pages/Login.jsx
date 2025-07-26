@@ -1,66 +1,105 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import axios from "axios";
 
 const Login = () => {
   const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  const [password, setPassword] = useState(""); // not used in backend but still captured
   const [role, setRole] = useState("");
   const [error, setError] = useState(null);
+  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
+
     if (!email || !password || !role) {
       setError("Please fill all fields and select a role.");
       return;
     }
-    // Simulate login and navigation based on role
-    if (role === "vendor") {
-      localStorage.setItem("loggedIn", "true");
-      navigate("/vendor");
-    } else if (role === "supplier") {
-      localStorage.setItem("loggedIn", "true");
-      navigate("/supplier");
-    } else if (role === "delivery") {
-      localStorage.setItem("loggedIn", "true");
-      navigate("/delivery");
-    } else {
-      setError("Invalid role selected.");
+
+    setLoading(true);
+    setError(null);
+
+    try {
+      const response = await axios.post(
+        "http://localhost:5002/api/auth/login",
+        { email, password, role },
+        { withCredentials: true } // 🔐 Needed for session cookies
+      );
+
+      const user = response.data?.user;
+
+      if (!user) {
+        throw new Error("No user returned from server.");
+      }
+
+      // Navigate based on role
+      if (user.role === "vendor") {
+        navigate("/vendor");
+      } else if (user.role === "supplier") {
+        navigate("/supplier");
+      } else if (user.role === "delivery") {
+        navigate("/delivery");
+      } else {
+        setError("Unknown user role");
+      }
+    } catch (err) {
+      console.error("Login error:", err);
+      setError(
+        err.response?.data?.message || "Login failed. Please try again."
+      );
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen ">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-900 via-blue-900 to-purple-900 px-4">
       <form
-        className=" p-8 rounded shadow-md w-full max-w-md"
+        className="w-full max-w-md bg-transparent rounded-3xl shadow-2xl p-8 md:p-12 flex flex-col gap-6"
         onSubmit={handleSubmit}
       >
-        <h2 className="text-2xl font-bold mb-6 text-center">Login</h2>
-        {error && <div className="mb-4 text-red-500 text-center">{error}</div>}
-        <div className="mb-4">
-          <label className="block mb-2 font-semibold">Email</label>
+        <h2 className="text-4xl font-extrabold mb-2 text-transparent bg-clip-text bg-gradient-to-r from-blue-300 via-purple-300 to-pink-300 animate-pulse text-center">
+          Login
+        </h2>
+
+        {error && (
+          <div className="mb-2 text-red-400 text-center font-semibold bg-red-900 bg-opacity-50 p-3 rounded-lg">
+            {error}
+          </div>
+        )}
+
+        <div>
+          <label className="block mb-2 font-semibold text-gray-100">
+            Email
+          </label>
           <input
             type="email"
-            className="w-full px-3 py-2 border rounded"
+            className="w-full px-4 py-3 border-2 border-blue-700 rounded-xl bg-gray-900 text-gray-100"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
           />
         </div>
-        <div className="mb-4">
-          <label className="block mb-2 font-semibold">Password</label>
+
+        <div>
+          <label className="block mb-2 font-semibold text-gray-100">
+            Password
+          </label>
           <input
             type="password"
-            className="w-full px-3 py-2 border rounded"
+            className="w-full px-4 py-3 border-2 border-purple-700 rounded-xl bg-gray-900 text-gray-100"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             required
           />
         </div>
-        <div className="mb-6">
-          <label className="block mb-2 font-semibold">Role</label>
+
+        <div>
+          <label className="block mb-2 font-semibold text-gray-100">Role</label>
           <select
-            className="w-full px-3 py-2 border rounded"
+            className="w-full px-4 py-3 border-2 border-pink-700 rounded-xl bg-gray-900 text-gray-100"
             value={role}
             onChange={(e) => setRole(e.target.value)}
             required
@@ -71,12 +110,21 @@ const Login = () => {
             <option value="delivery">Delivery Agent</option>
           </select>
         </div>
+
         <button
           type="submit"
-          className="w-full bg-blue-600 text-white py-2 rounded font-semibold hover:bg-blue-700"
+          disabled={loading}
+          className="w-full bg-gradient-to-r from-blue-700 via-purple-700 to-pink-700 text-white py-3 rounded-full font-bold text-xl hover:scale-105 transition-transform duration-200 disabled:opacity-50"
         >
-          Login
+          {loading ? "Logging in..." : "Login"}
         </button>
+
+        <div className="text-center text-gray-300 text-sm mt-4">
+          <p>Demo Credentials:</p>
+          <p>Vendor: vendor@example.com / password123</p>
+          <p>Supplier: supplier@example.com / password123</p>
+          <p>Delivery: delivery@example.com / password123</p>
+        </div>
       </form>
     </div>
   );
