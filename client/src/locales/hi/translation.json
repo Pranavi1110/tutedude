@@ -1,0 +1,12 @@
+{
+  "welcome": "स्वागत है",
+  "login": "लॉगिन",
+  "logout": "लॉगआउट",
+  "dashboard": "डैशबोर्ड",
+  "orders": "ऑर्डर",
+  "products": "उत्पाद",
+  "language": "भाषा",
+  "vendor_dashboard": "वेंडर डैशबोर्ड",
+  "supplier_dashboard": "सप्लायर डैशबोर्ड",
+  "delivery_dashboard": "डिलीवरी डैशबोर्ड"
+} 

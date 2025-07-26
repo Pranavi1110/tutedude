@@ -1,0 +1,12 @@
+{
+  "welcome": "స్వాగతం",
+  "login": "లాగిన్",
+  "logout": "లాగౌట్",
+  "dashboard": "డాష్‌బోర్డ్",
+  "orders": "ఆర్డర్లు",
+  "products": "ఉత్పత్తులు",
+  "language": "భాష",
+  "vendor_dashboard": "వెండర్ డాష్‌బోర్డ్",
+  "supplier_dashboard": "సప్లయర్ డాష్‌బోర్డ్",
+  "delivery_dashboard": "డెలివరీ డాష్‌బోర్డ్"
+} 

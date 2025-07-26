@@ -1,0 +1,12 @@
+{
+  "welcome": "Welcome",
+  "login": "Login",
+  "logout": "Logout",
+  "dashboard": "Dashboard",
+  "orders": "Orders",
+  "products": "Products",
+  "language": "Language",
+  "vendor_dashboard": "Vendor Dashboard",
+  "supplier_dashboard": "Supplier Dashboard",
+  "delivery_dashboard": "Delivery Dashboard"
+} 
