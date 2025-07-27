@@ -36,7 +36,7 @@ const Home = () => {
                 Login
               </button>
               <Link to="/agent-register">
-                <button className="bg-green-600 text-white px-10 py-3 rounded-full font-bold text-xl shadow-lg hover:scale-105 transition-transform duration-200 focus:outline-none focus:ring-4 focus:ring-green-300">
+                <button className="bg-green-600  px-10 py-3 rounded-full font-bold text-xl shadow-lg hover:scale-105 transition-transform duration-200 focus:outline-none focus:ring-4 focus:ring-green-300">
                   Register as Delivery Agent
                 </button>
               </Link>
