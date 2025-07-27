@@ -1,6 +1,10 @@
 const mongoose = require('mongoose');
 
 const productSchema = new mongoose.Schema({
+  image: {
+    type: String,
+    trim: true
+  },
   name: {
     type: String,
     required: true,
@@ -11,7 +15,7 @@ const productSchema = new mongoose.Schema({
     required: true,
     min: 0
   },
-  stock: {
+  quantity: {
     type: Number,
     required: true,
     min: 0,
@@ -33,7 +37,7 @@ const productSchema = new mongoose.Schema({
   unit: {
     type: String,
     default: 'kg',
-    enum: ['kg', 'pieces', 'liters', 'grams']
+    enum: ['kg', 'litre', 'piece', 'dozen']
   },
   isAvailable: {
     type: Boolean,

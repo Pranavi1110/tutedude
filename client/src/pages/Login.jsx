@@ -4,17 +4,25 @@ import axios from "axios";
 
 const Login = () => {
   const [email, setEmail] = useState("");
+  const [mobile, setMobile] = useState("");
   const [password, setPassword] = useState(""); // not used in backend but still captured
   const [role, setRole] = useState("");
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
+  // Get address from localStorage if available (set by SupplierDashboard)
+  const getAddressFromStorage = () => {
+    return localStorage.getItem("user_address") || "";
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (!email || !password || !role) {
-      setError("Please fill all fields and select a role.");
+    if (!email || !mobile || !password || !role) {
+      setError(
+        "Please fill all fields, including mobile number, and select a role."
+      );
       return;
     }
 
@@ -22,17 +30,20 @@ const Login = () => {
     setError(null);
 
     try {
+      const address = getAddressFromStorage();
       const response = await axios.post(
         "http://localhost:5002/api/auth/login",
-        { email, password, role },
-        { withCredentials: true } // 🔐 Needed for session cookies
+        { email, mobile, password, role, address },
+        { withCredentials: true }
       );
-
       const user = response.data?.user;
 
       if (!user) {
         throw new Error("No user returned from server.");
       }
+
+      // Save user object to localStorage for dashboard use
+      localStorage.setItem("user", JSON.stringify(user));
 
       // Navigate based on role
       if (user.role === "vendor") {
@@ -82,6 +93,20 @@ const Login = () => {
             required
           />
         </div>
+        <div>
+          <label className="block mb-2 font-semibold text-gray-100">
+            Mobile Number
+          </label>
+          <input
+            type="tel"
+            className="w-full px-4 py-3 border-2 border-green-700 rounded-xl bg-gray-900 text-gray-100"
+            value={mobile}
+            onChange={(e) => setMobile(e.target.value)}
+            required
+            pattern="[0-9]{10}"
+            placeholder="Enter 10-digit mobile number"
+          />
+        </div>
 
         <div>
           <label className="block mb-2 font-semibold text-gray-100">
@@ -95,7 +120,6 @@ const Login = () => {
             required
           />
         </div>
-
         <div>
           <label className="block mb-2 font-semibold text-gray-100">Role</label>
           <select

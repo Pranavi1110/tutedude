@@ -10,7 +10,7 @@ router.get("/products", async (req, res) => {
   try {
     const products = await Product.find({
       isAvailable: true,
-      stock: { $gt: 0 },
+      quantity: { $gt: 0 },
     })
       .populate("supplierId", "name email phone")
       .select("-__v");
@@ -47,10 +47,10 @@ router.post("/orders", async (req, res) => {
           .json({ message: `Product ${item.productId} not found` });
       }
 
-      if (product.stock < item.quantity) {
+      if (product.quantity < item.quantity) {
         return res
           .status(400)
-          .json({ message: `Insufficient stock for ${product.name}` });
+          .json({ message: `Insufficient quantity for ${product.name}` });
       }
 
       const itemTotal = product.price * item.quantity;
@@ -62,11 +62,7 @@ router.post("/orders", async (req, res) => {
         price: product.price,
         total: itemTotal,
       });
-
-      // Update product stock
-      await Product.findByIdAndUpdate(item.productId, {
-        $inc: { stock: -item.quantity },
-      });
+      // Do NOT decrement product quantity here
     }
 
     const order = new Order({

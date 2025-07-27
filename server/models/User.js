@@ -22,7 +22,7 @@ const userSchema = new mongoose.Schema({
     enum: ['vendor', 'supplier', 'delivery'],
     required: true
   },
-  phone: {
+  mobile: {
     type: String,
     trim: true
   },
