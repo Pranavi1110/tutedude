@@ -10,6 +10,7 @@ async function apiRequest(endpoint, options = {}) {
       "Content-Type": "application/json",
       ...options.headers,
     },
+    credentials: 'include', // Always send cookies for session auth
     ...options,
   };
 
@@ -29,6 +30,12 @@ async function apiRequest(endpoint, options = {}) {
 }
 
 const apiService = {
+  async login(loginData) {
+    return apiRequest("/api/auth/login", {
+      method: "POST",
+      body: JSON.stringify(loginData),
+    });
+  },
   vendor: {
     async getProducts() {
       return apiRequest("/api/vendor/products");

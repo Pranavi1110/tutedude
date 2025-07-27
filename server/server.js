@@ -10,7 +10,7 @@ const app = express();
 // Middleware
 app.use(
   cors({
-    origin: ["http://localhost:5175","https://tutedude-beryl.vercel.app"],
+    origin: ["http://localhost:5175", "https://tutedude-beryl.vercel.app"],
     credentials: true,
   })
 );
@@ -27,7 +27,8 @@ app.use(
     saveUninitialized: false,
     cookie: {
       httpOnly: true,
-      secure: false, // true in production with HTTPS
+      secure: true, // Required for cross-site cookies with HTTPS
+      sameSite: "none", // Required for cross-site cookies
       maxAge: 1000 * 60 * 60 * 24, // 1 day
     },
     store: MongoStore.create({

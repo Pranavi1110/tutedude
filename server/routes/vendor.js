@@ -13,7 +13,9 @@ router.get("/all-orders/:vendorId", async (req, res) => {
     const orders = await Order.find({ vendorId }).sort({ createdAt: -1 });
     res.json(orders);
   } catch (error) {
-    res.status(500).json({ message: "Failed to fetch orders", error: error.message });
+    res
+      .status(500)
+      .json({ message: "Failed to fetch orders", error: error.message });
   }
 });
 
@@ -21,27 +23,63 @@ router.get("/all-orders/:vendorId", async (req, res) => {
 router.get("/order-stats/:vendorId", async (req, res) => {
   try {
     const { vendorId } = req.params;
+    console.log("[Order Stats] vendorId received:", vendorId);
+    const orderCount = await Order.countDocuments({
+      vendorId: new mongoose.Types.ObjectId(vendorId),
+    });
+    console.log(
+      `[Order Stats] Total orders for vendorId ${vendorId}:`,
+      orderCount
+    );
 
     const daily = await Order.aggregate([
       { $match: { vendorId: new mongoose.Types.ObjectId(vendorId) } },
-      { $group: { _id: { $dateToString: { format: "%Y-%m-%d", date: "$createdAt" } }, count: { $sum: 1 } } },
-      { $sort: { _id: 1 } }
+      {
+        $group: {
+          _id: { $dateToString: { format: "%Y-%m-%d", date: "$createdAt" } },
+          count: { $sum: 1 },
+        },
+      },
+      { $sort: { _id: 1 } },
     ]);
+    console.log(
+      `[Order Stats] Daily aggregation for vendorId ${vendorId}:`,
+      daily
+    );
 
     const weekly = await Order.aggregate([
       { $match: { vendorId: new mongoose.Types.ObjectId(vendorId) } },
-      { $group: { _id: { $dateToString: { format: "%Y-%U", date: "$createdAt" } }, count: { $sum: 1 } } },
-      { $sort: { _id: 1 } }
+      {
+        $group: {
+          _id: { $dateToString: { format: "%Y-%U", date: "$createdAt" } },
+          count: { $sum: 1 },
+        },
+      },
+      { $sort: { _id: 1 } },
     ]);
+    console.log(
+      `[Order Stats] Weekly aggregation for vendorId ${vendorId}:`,
+      weekly
+    );
 
     const monthly = await Order.aggregate([
       { $match: { vendorId: new mongoose.Types.ObjectId(vendorId) } },
-      { $group: { _id: { $dateToString: { format: "%Y-%m", date: "$createdAt" } }, count: { $sum: 1 } } },
-      { $sort: { _id: 1 } }
+      {
+        $group: {
+          _id: { $dateToString: { format: "%Y-%m", date: "$createdAt" } },
+          count: { $sum: 1 },
+        },
+      },
+      { $sort: { _id: 1 } },
     ]);
+    console.log(
+      `[Order Stats] Monthly aggregation for vendorId ${vendorId}:`,
+      monthly
+    );
 
     res.json({ daily, weekly, monthly });
   } catch (error) {
+    console.error("[Order Stats] Error:", error);
     res.status(500).json({ message: "Failed to fetch order stats" });
   }
 });
@@ -54,7 +92,7 @@ async function getDefaultSupplier() {
       name: "Default Supplier",
       email: "default@supplier.com",
       password: "placeholder", // Hash in production
-      role: "supplier"
+      role: "supplier",
     });
     await supplier.save();
   }
@@ -76,19 +114,22 @@ router.get("/recommendations/:vendorId", async (req, res) => {
     const categoryCount = {};
     const purchasedProductIds = new Set();
 
-    orders.forEach(order => {
-      order.items.forEach(item => {
+    orders.forEach((order) => {
+      order.items.forEach((item) => {
         const product = item.productId;
         if (product) {
           purchasedProductIds.add(String(product._id));
           if (product.category) {
-            categoryCount[product.category] = (categoryCount[product.category] || 0) + item.quantity;
+            categoryCount[product.category] =
+              (categoryCount[product.category] || 0) + item.quantity;
           }
         }
       });
     });
 
-    const topCategory = Object.entries(categoryCount).sort((a, b) => b[1] - a[1])[0]?.[0];
+    const topCategory = Object.entries(categoryCount).sort(
+      (a, b) => b[1] - a[1]
+    )[0]?.[0];
     let recommendations = [];
 
     if (topCategory) {
@@ -96,13 +137,21 @@ router.get("/recommendations/:vendorId", async (req, res) => {
         category: topCategory,
         _id: { $nin: Array.from(purchasedProductIds) },
         stock: { $gt: 0 },
-        isAvailable: true
-      }).select("name price stock category image").sort({ stock: -1 }).limit(5);
+        isAvailable: true,
+      })
+        .select("name price stock category image")
+        .sort({ stock: -1 })
+        .limit(5);
     }
 
     if (!recommendations || recommendations.length === 0) {
-      recommendations = await Product.find({ isAvailable: true, stock: { $gt: 0 } })
-        .select("name price stock category image").sort({ price: 1 }).limit(5);
+      recommendations = await Product.find({
+        isAvailable: true,
+        stock: { $gt: 0 },
+      })
+        .select("name price stock category image")
+        .sort({ price: 1 })
+        .limit(5);
     }
 
     res.json(recommendations);
@@ -117,15 +166,17 @@ router.get("/trending-products", async (req, res) => {
     const last7Days = new Date();
     last7Days.setDate(last7Days.getDate() - 7);
 
-    const recentOrders = await Order.find({ createdAt: { $gte: last7Days } })
-      .populate("items.productId", "name price stock category image");
+    const recentOrders = await Order.find({
+      createdAt: { $gte: last7Days },
+    }).populate("items.productId", "name price stock category image");
 
     const demandMap = {};
-    recentOrders.forEach(order => {
-      order.items.forEach(item => {
+    recentOrders.forEach((order) => {
+      order.items.forEach((item) => {
         const product = item.productId;
         if (product) {
-          demandMap[product._id] = (demandMap[product._id] || 0) + item.quantity;
+          demandMap[product._id] =
+            (demandMap[product._id] || 0) + item.quantity;
         }
       });
     });
@@ -137,12 +188,19 @@ router.get("/trending-products", async (req, res) => {
 
     let trendingProducts = [];
     if (topProducts.length > 0) {
-      trendingProducts = await Product.find({ _id: { $in: topProducts } }).select("name price stock category image");
+      trendingProducts = await Product.find({
+        _id: { $in: topProducts },
+      }).select("name price stock category image");
     }
 
     if (!trendingProducts || trendingProducts.length === 0) {
-      trendingProducts = await Product.find({ isAvailable: true, stock: { $gt: 0 } })
-        .select("name price stock category image").sort({ price: -1 }).limit(5);
+      trendingProducts = await Product.find({
+        isAvailable: true,
+        stock: { $gt: 0 },
+      })
+        .select("name price stock category image")
+        .sort({ price: -1 })
+        .limit(5);
     }
 
     res.json(trendingProducts);
@@ -161,7 +219,9 @@ router.get("/all-products", async (req, res) => {
       .select("-__v");
     res.json(products);
   } catch (error) {
-    res.status(500).json({ message: "Error fetching all products", error: error.message });
+    res
+      .status(500)
+      .json({ message: "Error fetching all products", error: error.message });
   }
 });
 
@@ -170,26 +230,36 @@ router.get("/products", async (req, res) => {
   try {
     const products = await Product.find({
       isAvailable: true,
-      $or: [{ stock: { $gt: 0 } }, { quantity: { $gt: 0 } }]
+      $or: [{ stock: { $gt: 0 } }, { quantity: { $gt: 0 } }],
     })
       .populate("supplierId", "name email")
       .select("-__v");
 
     const normalized = products.map((p) => ({
       ...p.toObject(),
-      stock: p.stock ?? p.quantity ?? 0
+      stock: p.stock ?? p.quantity ?? 0,
     }));
 
     res.json(normalized);
   } catch (error) {
-    res.status(500).json({ message: "Error fetching products", error: error.message });
+    res
+      .status(500)
+      .json({ message: "Error fetching products", error: error.message });
   }
 });
 
 // Create new order (save product image)
 router.post("/orders", async (req, res) => {
   try {
-    const { vendorId, supplierId, items, deliveryAddress, mobileNumber, pickupAddress, notes } = req.body;
+    const {
+      vendorId,
+      supplierId,
+      items,
+      deliveryAddress,
+      mobileNumber,
+      pickupAddress,
+      notes,
+    } = req.body;
 
     if (!vendorId || !mongoose.Types.ObjectId.isValid(vendorId)) {
       return res.status(400).json({ message: "Invalid or missing vendorId" });
@@ -232,7 +302,9 @@ router.post("/orders", async (req, res) => {
 
       const currentStock = product.stock ?? product.quantity ?? 0;
       if (currentStock < item.quantity) {
-        return res.status(400).json({ message: `Insufficient stock for ${product.name}` });
+        return res
+          .status(400)
+          .json({ message: `Insufficient stock for ${product.name}` });
       }
 
       const itemTotal = product.price * item.quantity;
@@ -246,7 +318,9 @@ router.post("/orders", async (req, res) => {
         image: product.image || "", // Store image here
       });
 
-      await Product.findByIdAndUpdate(product._id, { $inc: { stock: -item.quantity } });
+      await Product.findByIdAndUpdate(product._id, {
+        $inc: { stock: -item.quantity },
+      });
     }
 
     let supplierAddress = "";
@@ -273,7 +347,9 @@ router.post("/orders", async (req, res) => {
     await order.save();
     res.status(201).json(order);
   } catch (error) {
-    res.status(500).json({ message: "Error creating order", error: error.message });
+    res
+      .status(500)
+      .json({ message: "Error creating order", error: error.message });
   }
 });
 
@@ -288,7 +364,9 @@ router.get("/my-orders/:vendorId", async (req, res) => {
 
     res.json(orders);
   } catch (error) {
-    res.status(500).json({ message: "Error fetching orders", error: error.message });
+    res
+      .status(500)
+      .json({ message: "Error fetching orders", error: error.message });
   }
 });
 
@@ -307,19 +385,24 @@ router.get("/orders/:orderId/details", async (req, res) => {
     const delivery = await Delivery.findOne({ orderId: req.params.orderId });
     res.json({ order, delivery });
   } catch (error) {
-    res.status(500).json({ message: "Error fetching order details", error: error.message });
+    res
+      .status(500)
+      .json({ message: "Error fetching order details", error: error.message });
   }
 });
 
 // -------------------- BACKFILL SCRIPT (optional) --------------------
 router.post("/backfill-images", async (req, res) => {
   try {
-    const orders = await Order.find({ "items.image": "" }).populate("items.productId", "image");
+    const orders = await Order.find({ "items.image": "" }).populate(
+      "items.productId",
+      "image"
+    );
     let updatedCount = 0;
 
     for (const order of orders) {
       let changed = false;
-      order.items.forEach(item => {
+      order.items.forEach((item) => {
         if (!item.image && item.productId?.image) {
           item.image = item.productId.image;
           changed = true;
@@ -332,7 +415,9 @@ router.post("/backfill-images", async (req, res) => {
     }
     res.json({ message: `Updated ${updatedCount} orders with images` });
   } catch (error) {
-    res.status(500).json({ message: "Error during backfill", error: error.message });
+    res
+      .status(500)
+      .json({ message: "Error during backfill", error: error.message });
   }
 });
 

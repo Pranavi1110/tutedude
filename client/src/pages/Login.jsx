@@ -37,6 +37,8 @@ const Login = () => {
         { withCredentials: true } // 🔐 Needed for session cookies
       );
       const user = response.data?.user;
+//       console.log("Login response:", response.data);
+//  console.log("User data:", user);
 
       if (!user) {
         throw new Error("No user returned from server.");
