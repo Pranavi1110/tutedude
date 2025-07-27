@@ -1,3 +1,5 @@
+// api.js
+
 const API_BASE_URL = import.meta.env.VITE_API_URL;
 
 // Generic API request function
@@ -28,138 +30,114 @@ async function apiRequest(endpoint, options = {}) {
 
 const apiService = {
   vendor: {
-    // Get all available products
     async getProducts() {
-      return apiRequest("/vendor/products");
+      return apiRequest("/api/vendor/products");
     },
-
-    // Get all products (including unavailable & out of stock)
     async getAllProducts() {
-      return apiRequest("/vendor/all-products");
+      return apiRequest("/api/vendor/all-products");
     },
-
-    // Get AI-powered personalized recommendations
     async getRecommendedProducts(vendorId) {
       console.log("Fetching recommendations for vendor:", vendorId);
-      const data = await apiRequest(`/vendor/recommendations/${vendorId}`);
-      // Fallback: If no recommendations, fetch some popular products
+      const data = await apiRequest(`/api/vendor/recommendations/${vendorId}`);
       if (!data || data.length === 0) {
-        console.warn(
-          "No personalized recommendations, falling back to popular products."
-        );
+        console.warn("No personalized recommendations, falling back to popular products.");
         const trending = await this.getTrendingProducts();
         return trending.slice(0, 5);
       }
       return data;
     },
-
-    // Get order stats for charting
     async getOrderStats(vendorId) {
-      return apiRequest(`/vendor/order-stats/${vendorId}`);
+      return apiRequest(`/api/vendor/order-stats/${vendorId}`);
     },
-
-    // Get trending products (past 7 days demand)
     async getTrendingProducts() {
-      const data = await apiRequest(`/vendor/trending-products`);
-      // Fallback: If no trending, just fetch all products and pick top 5
+      const data = await apiRequest(`/api/vendor/trending-products`);
       if (!data || data.length === 0) {
-        console.warn(
-          "No trending products found, falling back to top available products."
-        );
+        console.warn("No trending products found, falling back to top available products.");
         const all = await this.getProducts();
         return all.slice(0, 5);
       }
       return data;
     },
-
-    // Place a new order
     async placeOrder(orderData) {
-      return apiRequest("/vendor/orders", {
+      return apiRequest("/api/vendor/orders", {
         method: "POST",
         body: JSON.stringify(orderData),
       });
     },
-
-    // Get all orders for vendor
     async getVendorOrders(vendorId) {
-      return apiRequest(`/vendor/my-orders/${vendorId}`);
+      return apiRequest(`/api/vendor/my-orders/${vendorId}`);
     },
-
-    // Get order details
     async getOrderDetails(orderId) {
-      return apiRequest(`/vendor/orders/${orderId}/details`);
+      return apiRequest(`/api/vendor/orders/${orderId}/details`);
     },
   },
 
   supplier: {
     async getSupplierProducts(supplierId) {
-      return apiRequest(`/supplier/my-products/${supplierId}`);
+      return apiRequest(`/api/supplier/my-products/${supplierId}`);
     },
     async addProduct(productData) {
-      return apiRequest("/supplier/products", {
+      return apiRequest("/api/supplier/products", {
         method: "POST",
         body: JSON.stringify(productData),
       });
     },
     async updateProduct(productId, productData) {
-      return apiRequest(`/supplier/products/${productId}`, {
+      return apiRequest(`/api/supplier/products/${productId}`, {
         method: "PUT",
         body: JSON.stringify(productData),
       });
     },
     async deleteProduct(productId) {
-      return apiRequest(`/supplier/products/${productId}`, {
+      return apiRequest(`/api/supplier/products/${productId}`, {
         method: "DELETE",
       });
     },
     async getSupplierOrders(supplierId) {
-      return apiRequest(`/supplier/my-orders/${supplierId}`);
+      return apiRequest(`/api/supplier/my-orders/${supplierId}`);
     },
     async updateOrderStatus(orderId, status) {
-      return apiRequest(`/supplier/orders/${orderId}/status`, {
+      return apiRequest(`/api/supplier/orders/${orderId}/status`, {
         method: "PATCH",
         body: JSON.stringify({ status }),
       });
     },
     async getOrderDetails(orderId) {
-      return apiRequest(`/supplier/orders/${orderId}/details`);
+      return apiRequest(`/api/supplier/orders/${orderId}/details`);
     },
   },
 
   delivery: {
-    // Get available deliveries, optionally filtered by lat/lng
     async getAvailableDeliveries(lat, lng, radius) {
       let query = "";
       if (lat && lng) {
-        query = `?lat=${encodeURIComponent(lat)}&lng=${encodeURIComponent(
-          lng
-        )}`;
+        query = `?lat=${encodeURIComponent(lat)}&lng=${encodeURIComponent(lng)}`;
         if (radius) query += `&radius=${encodeURIComponent(radius)}`;
       }
-      return apiRequest(`/delivery/available${query}`);
+      return apiRequest(`/api/delivery/available${query}`);
     },
     async acceptDelivery(orderId, deliveryAgentId) {
-      return apiRequest(`/delivery/accept/${orderId}`, {
+      return apiRequest(`/api/delivery/accept/${orderId}`, {
         method: "POST",
         body: JSON.stringify({ deliveryAgentId }),
       });
     },
     async getAgentDeliveries(deliveryAgentId) {
-      return apiRequest(`/delivery/agent/${deliveryAgentId}`);
+      return apiRequest(`/api/delivery/agent/${deliveryAgentId}`);
     },
     async updateDeliveryStatus(deliveryId, statusData) {
-      return apiRequest(`/delivery/delivery/${deliveryId}/status`, {
+      return apiRequest(`/api/delivery/delivery/${deliveryId}/status`, {
         method: "PATCH",
         body: JSON.stringify(statusData),
       });
     },
     async getDeliveryDetails(deliveryId) {
-      return apiRequest(`/delivery/delivery/${deliveryId}/details`);
+      return apiRequest(`/api/delivery/delivery/${deliveryId}/details`);
     },
   },
 
   async healthCheck() {
-    return apiRequest("/health");
+    return apiRequest("/api/health");
   },
 };
 
