@@ -1,0 +1,254 @@
+import React, { useEffect, useState, useCallback } from "react";
+// Utility to convert orders to CSV
+function ordersToCSV(orders) {
+  if (!orders || orders.length === 0) return '';
+  const header = [
+    'Order ID',
+    'Date',
+    'Supplier',
+    'Delivery Address',
+    'Total Amount',
+    'Status',
+    'Items'
+  ];
+  const rows = orders.map(order => {
+    const items = order.items.map(item => {
+      const name = item.productId?.name || 'Product';
+      return `${name} (Qty: ${item.quantity} @ ₹${item.price})`;
+    }).join('; ');
+    return [
+      order._id,
+      new Date(order.createdAt).toLocaleString(),
+      order.supplierId?.name || 'Unknown',
+      order.deliveryAddress,
+      order.totalAmount,
+      order.status || 'Placed',
+      items
+    ].map(field => `"${String(field).replace(/"/g, '""')}"`).join(',');
+  });
+  return [header.join(','), ...rows].join('\r\n');
+}
+import { useLocation } from "react-router-dom";
+import apiService from "../services/api";
+
+const PastOrders = () => {
+
+  // Export orders as CSV
+  const handleExportCSV = () => {
+    const csv = ordersToCSV(orders);
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'past_orders.csv';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+  const location = useLocation();
+
+  const [user, setUser] = useState(null);
+  const [checkedUser, setCheckedUser] = useState(false);
+  const [orders, setOrders] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  // Normalize user (from location.state or localStorage)
+  useEffect(() => {
+    let foundUser = null;
+    try {
+      const stored = localStorage.getItem("user");
+      foundUser = location.state?.user || (stored ? JSON.parse(stored) : null);
+      if (foundUser && !foundUser._id && foundUser.id) {
+        foundUser._id = foundUser.id; // Normalize _id
+      }
+    } catch {
+      // ignore
+    }
+    setUser(foundUser);
+    setCheckedUser(true);
+  }, [location.state]);
+
+  // Fetch past orders for this user
+  useEffect(() => {
+    if (!user || !user._id) return;
+    const fetchOrders = async () => {
+      try {
+        setLoading(true);
+        const data = await apiService.vendor.getVendorOrders(user._id);
+        setOrders(data);
+      } catch (err) {
+        console.error("Error fetching orders:", err);
+        setError("Failed to fetch orders.");
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchOrders();
+  }, [user]);
+
+  // Load Razorpay dynamically
+  const loadRazorpayScript = useCallback(() => {
+    return new Promise((resolve) => {
+      if (window.Razorpay) return resolve();
+      const script = document.createElement("script");
+      script.src = "https://checkout.razorpay.com/v1/checkout.js";
+      script.onload = resolve;
+      document.body.appendChild(script);
+    });
+  }, []);
+
+  // Reorder functionality
+  const handleOrderAgain = useCallback((order) => {
+    const cart = order.items.map((item) => ({
+      ...item.productId,
+      quantity: item.quantity,
+      price: item.price,
+      supplierId: order.supplierId?._id || order.supplierId,
+    }));
+    localStorage.setItem("vendorCart", JSON.stringify(cart));
+    window.location.href = `/place-order?orderAgain=1`;
+  }, []);
+
+  // Razorpay payment for pending orders
+  const handlePayNow = useCallback(
+    async (order) => {
+      await loadRazorpayScript();
+      const totalAmount = order.totalAmount;
+      const options = {
+        key: "rzp_test_sr1UaCzPtw1nDc",
+        amount: Math.round(totalAmount * 100),
+        currency: "INR",
+        name: "Tutedude Order Payment",
+        description: `Payment for Order ${order._id}`,
+        handler: function () {
+          alert("Payment successful! Please refresh to update order status.");
+          // TODO: Call backend API to update order status
+        },
+        prefill: {
+          name: user?.name || "",
+          email: user?.email || "",
+        },
+        theme: { color: "#6366f1" },
+        modal: {
+          ondismiss: function () {
+            alert("Payment cancelled or failed. Order was not paid.");
+          },
+        },
+      };
+      const rzp = new window.Razorpay(options);
+      rzp.on("payment.failed", () => {
+        alert("Payment failed. Try again.");
+      });
+      rzp.open();
+    },
+    [user, loadRazorpayScript]
+  );
+
+  if (checkedUser && (!user || !user._id)) {
+    return (
+      <div className="text-red-500 text-xl p-8">
+        User not found. Please log in to view your past orders.
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-blue-900 to-purple-900 flex flex-col items-center p-8">
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between w-full max-w-2xl mb-8 gap-4">
+        <h2 className="text-3xl font-bold text-blue-100">Your Past Orders</h2>
+        {orders.length > 0 && (
+          <button
+            className="bg-green-500 hover:bg-green-600 text-black px-4 py-2 rounded-full font-bold shadow"
+            onClick={handleExportCSV}
+          >
+            Export as CSV
+          </button>
+        )}
+      </div>
+      {loading ? (
+        <div className="text-blue-200 text-xl">Loading...</div>
+      ) : error ? (
+        <div className="text-red-400 text-xl">{error}</div>
+      ) : orders.length === 0 ? (
+        <div className="text-blue-200 text-xl">No past orders found.</div>
+      ) : (
+        <div className="w-full max-w-2xl space-y-6">
+          {orders.map((order) => (
+            <div
+              key={order._id}
+              className="bg-blue-900 bg-opacity-70 rounded-xl p-6 border-2 border-blue-700 shadow-lg"
+            >
+              <div className="flex justify-between items-center mb-2">
+                <span className="text-blue-200">
+                  {new Date(order.createdAt).toLocaleString()}
+                </span>
+              </div>
+              <div className="mb-2 text-blue-200">
+                Supplier: {order.supplierId?.name || "Unknown"}
+              </div>
+              <div className="mb-2 text-blue-200">
+                Delivery Address: {order.deliveryAddress}
+              </div>
+              <div className="mb-2 text-blue-200">
+                Total Amount: ₹{order.totalAmount}
+              </div>
+              <div className="mb-2 text-blue-200">
+                Status: {order.status || "Placed"}
+              </div>
+              <div className="mt-2">
+                <span className="font-semibold text-blue-100">Items:</span>
+                <ul className="list-disc ml-6 text-blue-200">
+                  {order.items.map((item, idx) => (
+                    <li key={idx}>
+                      {item.productId && item.productId.name
+                        ? item.productId.name
+                        : (item.name || "Product Not Found")}
+                      {` - Qty: ${item.quantity} @ ₹${item.price}`}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+              <div className="flex flex-wrap gap-4 mt-4">
+                <button
+                  className="bg-green-600 hover:bg-green-700 text-black px-4 py-2 rounded-full font-bold shadow"
+                  onClick={() => handleOrderAgain(order)}
+                >
+                  Order Again
+                </button>
+                {order.status &&
+                  order.status.toLowerCase().includes("pending") && (
+                    <button
+                      className="bg-yellow-500 hover:bg-yellow-600 text-black px-4 py-2 rounded-full font-bold shadow"
+                      onClick={() => handlePayNow(order)}
+                    >
+                      Pay Now
+                    </button>
+                  )}
+                {order.supplierId?.mobile || order.supplierId?.phone ? (
+                  <a
+                    href={`tel:${order.supplierId.mobile || order.supplierId.phone}`}
+                    className="bg-blue-500 text-black  px-4 py-2 rounded-full font-bold shadow flex items-center"
+                    style={{ textDecoration: 'none' }}
+                  >
+                    📞 Contact Supplier
+                  </a>
+                ) : (
+                  <button
+                    className="bg-gray-400 text-black px-4 py-2 rounded-full font-bold shadow cursor-not-allowed"
+                    disabled
+                  >
+                    No Contact Available
+                  </button>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default PastOrders;

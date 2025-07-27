@@ -9,7 +9,7 @@ const app = express();
 
 // Middleware
 app.use(cors({
-  origin: "http://localhost:5175",
+  origin: "http://localhost:5173",
   credentials: true,
 }));
 
@@ -45,6 +45,7 @@ app.use("/api/auth", require("./routes/auth"));
 app.use("/api/vendor", require("./routes/vendor"));
 app.use("/api/supplier", require("./routes/supplier"));
 app.use("/api/delivery", require("./routes/delivery"));
+app.use("/api/geocode", require("./routes/geocode"));
 
 // Health Check
 app.get("/api/health", (req, res) => {

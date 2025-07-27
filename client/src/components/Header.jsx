@@ -35,7 +35,7 @@ const Header = () => {
         RasaChain
       </Link>
       <div className="flex items-center gap-4">
-        <LanguageSwitcher />
+        {/* <LanguageSwitcher /> */}
         {user ? (
           <div className="flex items-center gap-4">
             <span className="text-gray-300 text-sm">

@@ -22,7 +22,7 @@ const userSchema = new mongoose.Schema({
     enum: ['vendor', 'supplier', 'delivery'],
     required: true
   },
-  phone: {
+  mobile: {
     type: String,
     trim: true
   },
@@ -36,4 +36,4 @@ const userSchema = new mongoose.Schema({
   }
 });
 
-module.exports = mongoose.model('User', userSchema); 
+module.exports = mongoose.model('User', userSchema);

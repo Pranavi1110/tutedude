@@ -9,7 +9,7 @@ const orderItemSchema = new mongoose.Schema({
   quantity: {
     type: Number,
     required: true,
-    min: 1
+    min: 0.01
   },
   price: {
     type: Number,
@@ -50,11 +50,19 @@ const orderSchema = new mongoose.Schema({
     type: String,
     required: true
   },
+  mobileNumber: {
+    type: String,
+    required: true
+  },
   pickupAddress: {
     type: String,
     required: true
   },
   notes: {
+    type: String,
+    trim: true
+  },
+  supplierAddress: {
     type: String,
     trim: true
   },
