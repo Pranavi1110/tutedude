@@ -36,14 +36,11 @@ const Login = () => {
         { email, mobile, password, role, address },
         { withCredentials: true } // 🔐 Needed for session cookies
       );
-
       const user = response.data?.user;
 
       if (!user) {
         throw new Error("No user returned from server.");
       }
-
-      // Store user in localStorage for later use (e.g., PastOrders)
       localStorage.setItem("user", JSON.stringify(user));
 
       // Navigate based on role
@@ -121,7 +118,6 @@ const Login = () => {
             required
           />
         </div>
-
         <div>
           <label className="block mb-2 font-semibold text-gray-100">Role</label>
           <select

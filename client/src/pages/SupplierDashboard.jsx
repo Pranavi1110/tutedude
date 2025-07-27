@@ -4,6 +4,49 @@ import apiService from "../services/api";
 import Header from "../components/Header";
 
 const SupplierDashboard = () => {
+  const [location, setLocation] = useState({ latitude: null, longitude: null });
+  const [address, setAddress] = useState("");
+
+  useEffect(() => {
+    if (!supplierId) return;
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        async (position) => {
+          const lat = position.coords.latitude;
+          const lon = position.coords.longitude;
+          setLocation({ latitude: lat, longitude: lon });
+          // Use OpenStreetMap Nominatim API for reverse geocoding
+          try {
+            const response = await fetch(
+              `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}`
+            );
+            const data = await response.json();
+            const address = data.display_name || "Address not found";
+            setAddress(address);
+            localStorage.setItem("user_address", address);
+            // Send address to backend if available
+            if (address && address !== "Address not found" && supplierId) {
+              try {
+                await fetch(`http://localhost:5002/api/auth/user/address`, {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({ supplierId, address: address }),
+                  credentials: "include",
+                });
+              } catch (err) {
+                console.error("Failed to save address to backend", err);
+              }
+            }
+          } catch (err) {
+            setAddress("Address not found");
+          }
+        },
+        (error) => {
+          console.error("Geolocation error:", error);
+        }
+      );
+    }
+  }, []);
   const { t } = useTranslation();
   const [products, setProducts] = useState([]);
   const [orders, setOrders] = useState([]);
@@ -12,11 +55,17 @@ const SupplierDashboard = () => {
   const [newProduct, setNewProduct] = useState({
     name: "",
     price: "",
-    stock: "",
+    quantity: "",
+    unit: "kg",
   });
 
-  // Sample supplier ID (replace with dynamic value from auth in production)
-  const supplierId = "64b4e8f2c2a1b2d3e4f5a6b7"; // Example valid ObjectId
+  // Get supplier ID dynamically from localStorage/session (set at login)
+  const getSupplierId = () => {
+    // Try to get from localStorage (set at login)
+    const user = JSON.parse(localStorage.getItem("user"));
+    return user && user.id ? user.id : null;
+  };
+  const supplierId = getSupplierId();
 
   useEffect(() => {
     fetchData();
@@ -40,7 +89,12 @@ const SupplierDashboard = () => {
   };
 
   const addProduct = async () => {
-    if (!newProduct.name || !newProduct.price || !newProduct.stock) {
+    if (
+      !newProduct.name ||
+      !newProduct.price ||
+      !newProduct.quantity ||
+      !newProduct.unit
+    ) {
       alert("Please fill all fields");
       return;
     }
@@ -48,14 +102,14 @@ const SupplierDashboard = () => {
       const productData = {
         name: newProduct.name,
         price: parseFloat(newProduct.price),
-        stock: parseInt(newProduct.stock),
+        quantity: parseInt(newProduct.quantity),
         supplierId,
         category: "Vegetables",
         description: "Fresh product",
-        unit: "kg",
+        unit: newProduct.unit,
       };
       await apiService.supplier.addProduct(productData);
-      setNewProduct({ name: "", price: "", stock: "" });
+      setNewProduct({ name: "", price: "", quantity: "", unit: "kg" });
       fetchData(); // Refresh the data
       alert("Product added successfully!");
     } catch (error) {
@@ -66,8 +120,9 @@ const SupplierDashboard = () => {
 
   const markReadyForPickup = async (orderId) => {
     try {
+      // Only update order status, backend already decrements quantity
       await apiService.supplier.updateOrderStatus(orderId, "ready_for_pickup");
-      fetchData(); // Refresh the data
+      await fetchData(); // Refresh the data
       alert("Order marked as ready for pickup!");
     } catch (error) {
       setError("Failed to update order status");
@@ -93,6 +148,18 @@ const SupplierDashboard = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-blue-900 to-purple-900 flex flex-col items-center p-4 md:p-8">
+      {/* Location Display */}
+      <div className="w-full max-w-6xl mb-2 flex justify-end">
+        {address ? (
+          <div className="bg-blue-400 bg-opacity-70 text-amber-50 font-bold px-4 py-2 rounded-lg text-md shadow">
+            Your Location: {address}
+          </div>
+        ) : (
+          <div className="bg-blue-900 bg-opacity-70 text-blue-200 px-4 py-2 rounded-lg text-sm shadow">
+            Location not available
+          </div>
+        )}
+      </div>
       {/* <Header /> */}
       <div className="w-full max-w-6xl bg-transparent rounded-3xl shadow-2xl p-6 md:p-8 mt-4">
         <h2 className="text-3xl font-semibold mb-6 text-blue-100">
@@ -109,7 +176,7 @@ const SupplierDashboard = () => {
               <h4 className="font-semibold mb-2 text-purple-100">
                 Add New Product
               </h4>
-              <div className="grid grid-cols-3 gap-2">
+              <div className="grid grid-cols-4 gap-2">
                 <input
                   type="text"
                   placeholder="Product Name"
@@ -130,13 +197,25 @@ const SupplierDashboard = () => {
                 />
                 <input
                   type="number"
-                  placeholder="Stock"
-                  value={newProduct.stock}
+                  placeholder="Quantity"
+                  value={newProduct.quantity}
                   onChange={(e) =>
-                    setNewProduct({ ...newProduct, stock: e.target.value })
+                    setNewProduct({ ...newProduct, quantity: e.target.value })
                   }
                   className="border rounded px-2 py-1 bg-gray-900 text-purple-100 border-purple-700"
                 />
+                <select
+                  value={newProduct.unit}
+                  onChange={(e) =>
+                    setNewProduct({ ...newProduct, unit: e.target.value })
+                  }
+                  className="border rounded px-2 py-1 bg-gray-900 text-purple-100 border-purple-700"
+                >
+                  <option value="kg">kg</option>
+                  <option value="litre">litre</option>
+                  <option value="piece">piece</option>
+                  <option value="dozen">dozen</option>
+                </select>
               </div>
               <button
                 onClick={addProduct}
@@ -152,14 +231,25 @@ const SupplierDashboard = () => {
                   key={product._id}
                   className="border rounded p-3 flex justify-between items-center bg-purple-900 bg-opacity-70 border-purple-700"
                 >
-                  <div>
-                    <h4 className="font-semibold text-purple-100">
-                      {product.name}
-                    </h4>
-                    <p className="text-sm text-purple-200">
-                      {product.price}/{product.unit} | Stock: {product.stock}
-                      {product.unit}
-                    </p>
+                  <div className="flex items-center gap-4">
+                    <img
+                      src={
+                        product.image && product.image.trim() !== ""
+                          ? product.image
+                          : "/assets/default-product.png"
+                      }
+                      alt={product.name}
+                      className="w-16 h-16 object-cover rounded border border-purple-400 bg-white"
+                    />
+                    <div>
+                      <h4 className="font-semibold text-purple-100">
+                        {product.name}
+                      </h4>
+                      <p className="text-sm text-purple-200">
+                        {product.price}/{product.unit} | Quantity:{" "}
+                        {product.quantity} {product.unit}
+                      </p>
+                    </div>
                   </div>
                   <span className="text-green-200 text-sm">
                     {product.isAvailable ? "In Stock" : "Out of Stock"}

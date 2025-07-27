@@ -1,3 +1,4 @@
+
 const express = require("express");
 const router = express.Router();
 const User = require("../models/User");
@@ -96,4 +97,5 @@ router.post("/user/address", async (req, res) => {
     res.status(500).json({ message: "Error updating address", error: error.message });
   }
 });
+
 module.exports = router;
