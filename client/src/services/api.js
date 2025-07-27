@@ -1,4 +1,4 @@
-const API_BASE_URL = "http://localhost:5002/api";
+const API_BASE_URL = import.meta.env.VITE_API_URL;
 
 // Generic API request function
 async function apiRequest(endpoint, options = {}) {

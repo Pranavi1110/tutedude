@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import apiService from "../services/api";
 
 // Haversine Formula
+const API_BASE_URL = import.meta.env.VITE_API_URL;
 function getDistanceFromLatLonInMeters(lat1, lon1, lat2, lon2) {
   const R = 6371000;
   const dLat = ((lat2 - lat1) * Math.PI) / 180;
@@ -40,7 +41,7 @@ const DeliveryDashboard = () => {
 
           try {
             const response = await fetch(
-              `http://localhost:5002/api/geocode/reverse?lat=${lat}&lon=${lon}`
+              `${API_BASE_URL}/api/geocode/reverse?lat=${lat}&lon=${lon}`
             );
             const data = await response.json();
             const agentId = localStorage.getItem("agentId");
@@ -50,7 +51,7 @@ const DeliveryDashboard = () => {
             localStorage.setItem("user_address", fullAddress);
 
             if (fullAddress !== "Address not found" && agentId) {
-              await fetch("http://localhost:5002/api/auth/user/address", {
+              await fetch(`${API_BASE_URL}/api/auth/user/address`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
@@ -254,8 +255,8 @@ const DeliveryDashboard = () => {
                         vendorCoords[1],
                         vendorCoords[0]
                       );
-                      totalETA =
-                        estimateTimeMinutes(dist1) + estimateTimeMinutes(dist2);
+                      // totalETA =
+                      //   estimateTimeMinutes(dist1) + estimateTimeMinutes(dist2);
                     } else {
                       debugReason.push("missing agent/supplier/vendor coords");
                     }

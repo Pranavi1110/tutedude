@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import apiService from "../services/api";
-
+const API_BASE_URL = import.meta.env.VITE_API_URL;
 // Load Razorpay script
 const loadRazorpayScript = () => {
   return new Promise((resolve) => {
@@ -42,7 +42,7 @@ const PlaceOrderForm = () => {
         const { latitude, longitude } = position.coords;
         try {
           const res = await fetch(
-            `http://localhost:5002/api/geocode/reverse?lat=${latitude}&lon=${longitude}`
+            `${API_BASE_URL}/api/geocode/reverse?lat=${latitude}&lon=${longitude}`
           );
           const data = await res.json();
           const a = data.address || {};
@@ -213,8 +213,8 @@ const PlaceOrderForm = () => {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-900 via-blue-900 to-purple-900">
-      <div className="bg-gradient-to-br from-blue-900 via-purple-900 to-pink-900 bg-opacity-80 rounded-3xl p-8 w-full max-w-md shadow-2xl relative border-2 border-blue-700">
+    <div className="flex items-center justify-center min-w-6xl p-5  ms-9 bg-gradient-to-br from-gray-900 via-blue-900 to-purple-900">
+      <div className="bg-gradient-to-br mx-auto from-blue-900  via-purple-900 to-pink-900 bg-opacity-80 rounded-3xl p-8 w-full max-w-md shadow-2xl relative border-2 border-blue-700">
         <h2 className="text-2xl font-bold mb-4 text-blue-100">Order Details</h2>
         <form onSubmit={handleSubmit}>
           {/* Name */}

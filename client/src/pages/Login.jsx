@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
-
+const API_BASE_URL = import.meta.env.VITE_API_URL;
 const Login = () => {
   const [email, setEmail] = useState("");
   const [mobile, setMobile] = useState("");
@@ -32,7 +32,7 @@ const Login = () => {
     try {
       const address = getAddressFromStorage();
       const response = await axios.post(
-        "http://localhost:5002/api/auth/login",
+        `${API_BASE_URL}/api/auth/login`,
         { email, mobile, password, role, address },
         { withCredentials: true } // 🔐 Needed for session cookies
       );

@@ -13,7 +13,7 @@ import axios from "axios";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import apiService from "../services/api";
-
+const API_BASE_URL = import.meta.env.VITE_API_URL;
 const VendorDashboard = () => {
   const { t } = useTranslation();
   const [cart, setCart] = useState(() => {
@@ -85,7 +85,7 @@ const VendorDashboard = () => {
   // Load user and products
   useEffect(() => {
     axios
-      .get("http://localhost:5002/api/auth/me", { withCredentials: true })
+      .get(`${API_BASE_URL}/api/auth/me`, { withCredentials: true })
       .then((res) => {
         setUser(res.data.user);
         if (res.data.user) {

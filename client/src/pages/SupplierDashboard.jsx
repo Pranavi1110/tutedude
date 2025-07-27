@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import apiService from "../services/api";
 import Header from "../components/Header";
-
+const API_BASE_URL = import.meta.env.VITE_API_URL;
 const SupplierDashboard = () => {
   const [location, setLocation] = useState({ latitude: null, longitude: null });
   const [address, setAddress] = useState("");
@@ -27,7 +27,7 @@ const SupplierDashboard = () => {
             // Send address to backend if available
             if (address && address !== "Address not found" && supplierId) {
               try {
-                await fetch(`http://localhost:5002/api/auth/user/address`, {
+                await fetch(`${API_BASE_URL}/api/auth/user/address`, {
                   method: "POST",
                   headers: { "Content-Type": "application/json" },
                   body: JSON.stringify({ supplierId, address: address }),

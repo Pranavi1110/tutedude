@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { Link, useNavigate } from "react-router-dom";
-
+const API_BASE_URL = import.meta.env.VITE_API_URL;
 const Home = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();

@@ -20,7 +20,7 @@ const Header = () => {
         withCredentials: true,
       });
       setUser(null);
-      localStorage.removeItem("user");
+      // localStorage.removeItem("user");
       navigate("/");
     } catch (err) {
       console.error("Logout failed:", err);
