@@ -149,13 +149,22 @@ const PlaceOrderForm = () => {
   };
 
   // Payment + order flow
-  const handleSubmit = async (e) => {
+  const handleSubmit = async (e, payLater = false) => {
     e.preventDefault();
     setLoading(true);
     setError(null);
     try {
       // Step 1: Create pending orders
       const orders = await createOrders();
+
+      if (payLater) {
+        // Just place the order as pending, no payment
+        localStorage.removeItem("vendorCart");
+        localStorage.setItem("user", JSON.stringify(user));
+        alert("Order placed! You can pay later from your past orders.");
+        navigate("/past-orders", { state: { user } });
+        return;
+      }
 
       // Step 2: Calculate total payment amount
       const totalAmount = cart.reduce((sum, item, idx) => {
@@ -281,13 +290,24 @@ const PlaceOrderForm = () => {
 
           {error && <div className="text-red-400 mb-2">{error}</div>}
 
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full bg-gradient-to-r from-green-700 via-blue-700 to-purple-700 text-white py-3 rounded-full font-bold text-xl shadow-lg hover:scale-105 transition-transform duration-200"
-          >
-            {loading ? "Processing..." : "Pay & Confirm"}
-          </button>
+          <div className="flex flex-col gap-3">
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full bg-gradient-to-r from-green-700 via-blue-700 to-purple-700 text-white py-3 rounded-full font-bold text-xl shadow-lg hover:scale-105 transition-transform duration-200"
+              onClick={(e) => handleSubmit(e, false)}
+            >
+              {loading ? "Processing..." : "Pay & Confirm"}
+            </button>
+            <button
+              type="button"
+              disabled={loading}
+              className="w-full bg-gradient-to-r from-yellow-500 via-orange-500 to-pink-500 text-white py-3 rounded-full font-bold text-xl shadow-lg hover:scale-105 transition-transform duration-200"
+              onClick={(e) => handleSubmit(e, true)}
+            >
+              {loading ? "Processing..." : "Pay Later (Place Order)"}
+            </button>
+          </div>
         </form>
       </div>
     </div>

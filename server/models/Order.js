@@ -18,6 +18,11 @@ const orderItemSchema = new mongoose.Schema({
   total: {
     type: Number,
     required: true
+  },
+  image: {  // NEW FIELD to store product image URL
+    type: String,
+    trim: true,
+    default: '' // optional, fallback if no image is provided
   }
 });
 
@@ -76,10 +81,10 @@ const orderSchema = new mongoose.Schema({
   }
 });
 
-// Update the updatedAt field before saving
+// Auto-update `updatedAt` before saving
 orderSchema.pre('save', function(next) {
   this.updatedAt = Date.now();
   next();
 });
 
-module.exports = mongoose.model('Order', orderSchema); 
+module.exports = mongoose.model('Order', orderSchema);

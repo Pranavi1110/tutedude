@@ -1,4 +1,7 @@
 import React, { useEffect, useState, useCallback } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
+import apiService from "../services/api";
+
 // Utility to convert orders to CSV
 function ordersToCSV(orders) {
   if (!orders || orders.length === 0) return '';
@@ -28,24 +31,9 @@ function ordersToCSV(orders) {
   });
   return [header.join(','), ...rows].join('\r\n');
 }
-import { useLocation } from "react-router-dom";
-import apiService from "../services/api";
 
 const PastOrders = () => {
-
-  // Export orders as CSV
-  const handleExportCSV = () => {
-    const csv = ordersToCSV(orders);
-    const blob = new Blob([csv], { type: 'text/csv' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'past_orders.csv';
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-  };
+  const navigate = useNavigate();
   const location = useLocation();
 
   const [user, setUser] = useState(null);
@@ -54,23 +42,30 @@ const PastOrders = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // Normalize user (from location.state or localStorage)
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 5;
+  const totalPages = Math.ceil(orders.length / itemsPerPage);
+  const paginatedOrders = orders.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
+
+  // Normalize user
   useEffect(() => {
     let foundUser = null;
     try {
       const stored = localStorage.getItem("user");
       foundUser = location.state?.user || (stored ? JSON.parse(stored) : null);
       if (foundUser && !foundUser._id && foundUser.id) {
-        foundUser._id = foundUser.id; // Normalize _id
+        foundUser._id = foundUser.id;
       }
-    } catch {
-      // ignore
-    }
+    } catch {}
     setUser(foundUser);
     setCheckedUser(true);
   }, [location.state]);
 
-  // Fetch past orders for this user
+  // Fetch past orders
   useEffect(() => {
     if (!user || !user._id) return;
     const fetchOrders = async () => {
@@ -88,16 +83,19 @@ const PastOrders = () => {
     fetchOrders();
   }, [user]);
 
-  // Load Razorpay dynamically
-  const loadRazorpayScript = useCallback(() => {
-    return new Promise((resolve) => {
-      if (window.Razorpay) return resolve();
-      const script = document.createElement("script");
-      script.src = "https://checkout.razorpay.com/v1/checkout.js";
-      script.onload = resolve;
-      document.body.appendChild(script);
-    });
-  }, []);
+  // Export CSV
+  const handleExportCSV = () => {
+    const csv = ordersToCSV(orders);
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'past_orders.csv';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
 
   // Reorder functionality
   const handleOrderAgain = useCallback((order) => {
@@ -105,46 +103,12 @@ const PastOrders = () => {
       ...item.productId,
       quantity: item.quantity,
       price: item.price,
+      image: item.image || item.productId?.image || "", // Keep image when adding back to cart
       supplierId: order.supplierId?._id || order.supplierId,
     }));
     localStorage.setItem("vendorCart", JSON.stringify(cart));
     window.location.href = `/place-order?orderAgain=1`;
   }, []);
-
-  // Razorpay payment for pending orders
-  const handlePayNow = useCallback(
-    async (order) => {
-      await loadRazorpayScript();
-      const totalAmount = order.totalAmount;
-      const options = {
-        key: "rzp_test_sr1UaCzPtw1nDc",
-        amount: Math.round(totalAmount * 100),
-        currency: "INR",
-        name: "Tutedude Order Payment",
-        description: `Payment for Order ${order._id}`,
-        handler: function () {
-          alert("Payment successful! Please refresh to update order status.");
-          // TODO: Call backend API to update order status
-        },
-        prefill: {
-          name: user?.name || "",
-          email: user?.email || "",
-        },
-        theme: { color: "#6366f1" },
-        modal: {
-          ondismiss: function () {
-            alert("Payment cancelled or failed. Order was not paid.");
-          },
-        },
-      };
-      const rzp = new window.Razorpay(options);
-      rzp.on("payment.failed", () => {
-        alert("Payment failed. Try again.");
-      });
-      rzp.open();
-    },
-    [user, loadRazorpayScript]
-  );
 
   if (checkedUser && (!user || !user._id)) {
     return (
@@ -156,17 +120,26 @@ const PastOrders = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-blue-900 to-purple-900 flex flex-col items-center p-8">
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between w-full max-w-2xl mb-8 gap-4">
-        <h2 className="text-3xl font-bold text-blue-100">Your Past Orders</h2>
-        {orders.length > 0 && (
+      <div className="w-full max-w-2xl flex flex-col gap-4 mb-8">
+        <div className="flex justify-between items-center">
           <button
-            className="bg-green-500 hover:bg-green-600 text-black px-4 py-2 rounded-full font-bold shadow"
-            onClick={handleExportCSV}
+            className="bg-blue-500 hover:bg-blue-600 px-4 py-2 rounded-full font-bold shadow"
+            onClick={() => navigate('/vendor', { state: { user } })}
           >
-            Export as CSV
+            Go Back to Dashboard
           </button>
-        )}
+          {orders.length > 0 && (
+            <button
+              className="bg-green-500 hover:bg-green-600 text-black px-4 py-2 rounded-full font-bold shadow"
+              onClick={handleExportCSV}
+            >
+              Export as CSV
+            </button>
+          )}
+        </div>
+        <h2 className="text-3xl font-bold text-blue-100">Your Past Orders</h2>
       </div>
+
       {loading ? (
         <div className="text-blue-200 text-xl">Loading...</div>
       ) : error ? (
@@ -175,7 +148,7 @@ const PastOrders = () => {
         <div className="text-blue-200 text-xl">No past orders found.</div>
       ) : (
         <div className="w-full max-w-2xl space-y-6">
-          {orders.map((order) => (
+          {paginatedOrders.map((order) => (
             <div
               key={order._id}
               className="bg-blue-900 bg-opacity-70 rounded-xl p-6 border-2 border-blue-700 shadow-lg"
@@ -197,19 +170,35 @@ const PastOrders = () => {
               <div className="mb-2 text-blue-200">
                 Status: {order.status || "Placed"}
               </div>
+
               <div className="mt-2">
                 <span className="font-semibold text-blue-100">Items:</span>
-                <ul className="list-disc ml-6 text-blue-200">
+                <ul className="space-y-3 mt-2">
                   {order.items.map((item, idx) => (
-                    <li key={idx}>
-                      {item.productId && item.productId.name
-                        ? item.productId.name
-                        : (item.name || "Product Not Found")}
-                      {` - Qty: ${item.quantity} @ ₹${item.price}`}
+                    <li
+                      key={idx}
+                      className="flex items-center gap-4 bg-blue-800 p-3 rounded-lg"
+                    >
+                      {/* Product Image */}
+                      <img
+                        src={item.image || item.productId?.image || "/placeholder.png"}
+                        alt={item.productId?.name || "Product"}
+                        className="w-16 h-16 object-cover rounded-md border border-blue-400"
+                      />
+                      <div className="text-blue-200">
+                        <div className="font-bold">
+                          {item.productId?.name || "Unknown Product"}
+                        </div>
+                        <div className="text-sm">
+                          Qty: {item.quantity} @ ₹{item.price}
+                        </div>
+                      </div>
                     </li>
                   ))}
                 </ul>
               </div>
+
+              {/* Actions */}
               <div className="flex flex-wrap gap-4 mt-4">
                 <button
                   className="bg-green-600 hover:bg-green-700 text-black px-4 py-2 rounded-full font-bold shadow"
@@ -217,20 +206,18 @@ const PastOrders = () => {
                 >
                   Order Again
                 </button>
-                {order.status &&
-                  order.status.toLowerCase().includes("pending") && (
-                    <button
-                      className="bg-yellow-500 hover:bg-yellow-600 text-black px-4 py-2 rounded-full font-bold shadow"
-                      onClick={() => handlePayNow(order)}
-                    >
-                      Pay Now
-                    </button>
-                  )}
+                {order.status?.toLowerCase().includes("pending") && (
+                  <button
+                    className="bg-yellow-500 hover:bg-yellow-600 text-black px-4 py-2 rounded-full font-bold shadow"
+                    onClick={() => alert("Handle Razorpay flow here")}
+                  >
+                    Pay Now
+                  </button>
+                )}
                 {order.supplierId?.mobile || order.supplierId?.phone ? (
                   <a
                     href={`tel:${order.supplierId.mobile || order.supplierId.phone}`}
-                    className="bg-blue-500 text-black  px-4 py-2 rounded-full font-bold shadow flex items-center"
-                    style={{ textDecoration: 'none' }}
+                    className="bg-blue-500 text-black px-4 py-2 rounded-full font-bold shadow flex items-center"
                   >
                     📞 Contact Supplier
                   </a>
@@ -245,6 +232,39 @@ const PastOrders = () => {
               </div>
             </div>
           ))}
+
+          {/* Pagination */}
+          {totalPages > 1 && (
+            <div className="flex justify-center mt-6 gap-2">
+              <button
+                onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                disabled={currentPage === 1}
+                className="px-3 py-1 bg-blue-700 rounded"
+              >
+                Prev
+              </button>
+              {Array.from({ length: totalPages }, (_, idx) => (
+                <button
+                  key={idx + 1}
+                  onClick={() => setCurrentPage(idx + 1)}
+                  className={`px-3 py-1 rounded ${
+                    currentPage === idx + 1
+                      ? "bg-pink-600"
+                      : "bg-blue-200 text-blue-900"
+                  }`}
+                >
+                  {idx + 1}
+                </button>
+              ))}
+              <button
+                onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                disabled={currentPage === totalPages}
+                className="px-3 py-1 bg-blue-700 rounded"
+              >
+                Next
+              </button>
+            </div>
+          )}
         </div>
       )}
     </div>

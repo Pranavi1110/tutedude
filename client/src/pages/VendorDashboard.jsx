@@ -147,8 +147,15 @@ const VendorDashboard = () => {
         
         {/* Order Statistics Chart */}
         <div className="mb-8">
-       
-          <h3 className="text-xl font-bold text-yellow-300 mb-2">Order Trends</h3>
+          <div className="flex items-center justify-between mb-2">
+            <h3 className="text-xl font-bold text-yellow-300">Order Trends</h3>
+            <button
+              className="bg-green-500 hover:bg-green-600 text-black px-4 py-2 rounded-full font-bold shadow ml-4"
+              onClick={() => navigate('/past-orders', { state: { user } })}
+            >
+              {t("past_orders")}
+            </button>
+          </div>
           <div className="flex gap-2 mb-2">
             <button onClick={() => setOrderStatsType("daily")} className={`px-3 py-1 rounded ${orderStatsType === "daily" ? "bg-yellow-500 text-black" : "bg-gray-700 text-yellow-200"}`}>Day</button>
             <button onClick={() => setOrderStatsType("weekly") } className={`px-3 py-1 rounded ${orderStatsType === "weekly" ? "bg-yellow-500 text-black" : "bg-gray-700 text-yellow-200"}`}>Week</button>
@@ -185,6 +192,11 @@ const VendorDashboard = () => {
                 <div className="flex flex-wrap gap-4">
                   {recommended.map((p) => (
                     <div key={p._id} className="border border-green-400 rounded-xl p-4 bg-green-900 bg-opacity-40 min-w-[200px]">
+                      <img
+                src={p.image || "https://via.placeholder.com/150x100?text=No+Image"}
+                alt={p.name}
+                className="w-full h-32 object-cover rounded-lg mb-3 border border-green-500"
+              />
                       <div className="font-semibold text-green-100">{p.name}</div>
                       <div className="text-green-200">₹{p.price}</div>
                       <button
@@ -202,6 +214,11 @@ const VendorDashboard = () => {
                 <div className="flex flex-wrap gap-4">
                   {trending.map((p) => (
                     <div key={p._id} className="border border-pink-400 rounded-xl p-4 bg-pink-900 bg-opacity-40 min-w-[200px]">
+                      <img
+                src={p.image || "https://via.placeholder.com/150x100?text=No+Image"}
+                alt={p.name}
+                className="w-full h-32 object-cover rounded-lg mb-3 border border-green-500"
+              />
                       <div className="font-semibold text-pink-100">{p.name}</div>
                       <div className="text-pink-200">₹{p.price} ({p.demandScore || "High Demand"})</div>
                       <button
@@ -242,6 +259,16 @@ const VendorDashboard = () => {
           </select>
         </div>
 
+        {/* Past Orders Button */}
+        {/* <div className="flex justify-end mb-6">
+          <button
+            className="bg-green-500 hover:bg-green-600 text-black px-4 py-2 rounded-full font-bold shadow"
+            onClick={() => navigate('/past-orders', { state: { user } })}
+          >
+            {t("past_orders")}
+          </button>
+        </div> */}
+
         {/* Products */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           <div className="lg:col-span-2">
@@ -249,6 +276,12 @@ const VendorDashboard = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {paginatedProducts.map((p) => (
                 <div key={p._id} className="border-2 border-blue-700 rounded-2xl p-6 bg-blue-900 bg-opacity-70">
+                  <img
+            src={p.image || "https://via.placeholder.com/200x150?text=No+Image"}
+            alt={p.name}
+            className="w-full h-40 object-cover rounded-xl mb-4 border border-blue-500"
+          />
+
                   <h4 className="font-bold text-lg mb-2 text-blue-100">{p.name}</h4>
                   <p className="text-green-200 font-semibold">{p.price}/{p.unit}</p>
                   <p className="text-sm text-blue-300">Stock: {p.stock} {p.unit}</p>
