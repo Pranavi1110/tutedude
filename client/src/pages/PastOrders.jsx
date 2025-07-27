@@ -363,7 +363,7 @@ function ordersToCSV(orders) {
     const items = order.items
       .map((item) => {
         const name = item.productId?.name || "Product";
-        return ${name} (Qty: ${item.quantity} @ ₹${item.price});
+        return `${name} (Qty: ${item.quantity} @ ₹${item.price})`;
       })
       .join("; ");
     return [
@@ -375,7 +375,7 @@ function ordersToCSV(orders) {
       order.status || "Placed",
       items,
     ]
-      .map((field) => "${String(field).replace(/"/g, '""')}")
+      .map((field) => `"${String(field).replace(/"/g, '""')}"`)
       .join(",");
   });
   return [header.join(","), ...rows].join("\r\n");
@@ -412,7 +412,7 @@ const PastOrders = () => {
         amount: Math.round(order.totalAmount * 100),
         currency: "INR",
         name: "Tutedude Order Payment",
-        description: Payment for Order #${order._id},
+        description: `Payment for Order #${order._id}`,
         handler: async () => {
           // Update order status via API
           await apiService.supplier.updateOrderStatus(order._id, "paid");
@@ -609,7 +609,7 @@ const PastOrders = () => {
                 )}
                 {order.supplierId?.mobile || order.supplierId?.phone ? (
                   <a
-                    href={tel:${order.supplierId.mobile || order.supplierId.phone}}
+                    href={`tel:${order.supplierId.mobile || order.supplierId.phone}`}
                     className="px-4 py-2 rounded-full font-bold shadow flex items-center"
                   >
                     📞 Contact Supplier

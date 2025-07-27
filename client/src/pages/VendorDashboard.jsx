@@ -597,7 +597,7 @@ const VendorDashboard = () => {
   // Load user and products
   useEffect(() => {
     axios
-      .get(${API_BASE_URL}/api/auth/me, { withCredentials: true })
+      .get(`${API_BASE_URL}/api/auth/me`, { withCredentials: true })
       .then((res) => {
         setUser(res.data.user);
         if (res.data.user) {
