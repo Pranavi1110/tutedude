@@ -105,9 +105,16 @@ const apiService = {
 
   // Delivery API methods
   delivery: {
-    // Get available deliveries
-    async getAvailableDeliveries() {
-      return apiService.request("/delivery/available");
+    // Get available deliveries, optionally filtered by lat/lng
+    async getAvailableDeliveries(lat, lng, radius) {
+      let query = "";
+      if (lat && lng) {
+        query = `?lat=${encodeURIComponent(lat)}&lng=${encodeURIComponent(
+          lng
+        )}`;
+        if (radius) query += `&radius=${encodeURIComponent(radius)}`;
+      }
+      return apiService.request(`/delivery/available${query}`);
     },
 
     // Accept a delivery

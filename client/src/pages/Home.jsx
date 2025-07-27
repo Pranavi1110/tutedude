@@ -28,12 +28,19 @@ const Home = () => {
         </p>
         <div className="w-full flex flex-col items-center gap-6">
           {!loggedIn ? (
-            <button
-              className="bg-gradient-to-r from-blue-700 via-purple-700 to-pink-700 text-white px-10 py-3 rounded-full font-bold text-xl shadow-lg hover:scale-105 transition-transform duration-200 focus:outline-none focus:ring-4 focus:ring-blue-300"
-              onClick={handleLogin}
-            >
-              Login
-            </button>
+            <>
+              <button
+                className="bg-gradient-to-r from-blue-700 via-purple-700 to-pink-700 text-white px-10 py-3 rounded-full font-bold text-xl shadow-lg hover:scale-105 transition-transform duration-200 focus:outline-none focus:ring-4 focus:ring-blue-300 mb-4"
+                onClick={handleLogin}
+              >
+                Login
+              </button>
+              <Link to="/agent-register">
+                <button className="bg-green-600 text-white px-10 py-3 rounded-full font-bold text-xl shadow-lg hover:scale-105 transition-transform duration-200 focus:outline-none focus:ring-4 focus:ring-green-300">
+                  Register as Delivery Agent
+                </button>
+              </Link>
+            </>
           ) : (
             <div className="w-full grid grid-cols-1 md:grid-cols-3 gap-6 mt-4">
               <Link to="/vendor" className="block">

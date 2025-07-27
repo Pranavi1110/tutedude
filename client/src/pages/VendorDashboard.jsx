@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from "react";
+import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
+import "leaflet/dist/leaflet.css";
 import { useTranslation } from "react-i18next";
 import apiService from "../services/api";
 import Header from "../components/Header";
@@ -10,6 +12,7 @@ const VendorDashboard = () => {
     return savedCart ? JSON.parse(savedCart) : [];
   });
   const [products, setProducts] = useState([]);
+  const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -18,20 +21,31 @@ const VendorDashboard = () => {
 
   useEffect(() => {
     fetchProducts();
+    fetchOrders();
   }, []);
 
   const fetchProducts = async () => {
-    try {
-      setLoading(true);
-      const data = await apiService.vendor.getProducts();
-      setProducts(data);
-    } catch (error) {
-      setError("Failed to fetch products");
-      console.error("Error fetching products:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
+  try {
+    setLoading(true);
+    const data = await apiService.vendor.getProducts();
+    setProducts(data);
+  } catch (error) {
+    setError("Failed to fetch products");
+    console.error("Error fetching products:", error);
+  } finally {
+    setLoading(false);
+  }
+};
+
+const fetchOrders = async () => {
+  try {
+    const data = await apiService.vendor.getVendorOrders(vendorId);
+    setOrders(data);
+  } catch (error) {
+    console.error("Error fetching orders:", error);
+  }
+};
+  
 
   const addToCart = (product) => {
     const updatedCart = [...cart, product];
@@ -104,9 +118,7 @@ const VendorDashboard = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-blue-900 to-purple-900 flex flex-col items-center p-4 md:p-8">
-      {/* <Header /> */}
       <div className="w-full max-w-6xl bg-transparent rounded-3xl shadow-2xl p-6 md:p-8 mt-4">
-        {/* ...existing code... */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Products Section */}
           <div className="lg:col-span-2">
@@ -137,6 +149,61 @@ const VendorDashboard = () => {
                   >
                     Add to Cart
                   </button>
+                </div>
+              ))}
+            </div>
+            {/* Orders Section with agent location */}
+            <h3 className="text-2xl font-bold mt-10 mb-6 text-green-200">
+              Your Orders
+            </h3>
+            <div className="space-y-6">
+              {orders.map((order) => (
+                <div
+                  key={order._id}
+                  className="border-2 border-green-700 rounded-2xl p-6 bg-green-900 bg-opacity-70"
+                >
+                  <h4 className="font-bold text-lg mb-2 text-green-100">
+                    Order #{order._id}
+                  </h4>
+                  <p className="text-green-200 mb-1">Status: {order.status}</p>
+                  <p className="text-green-200 mb-1">
+                    Delivery Address: {order.deliveryAddress}
+                  </p>
+                  <p className="text-green-200 mb-1">
+                    Pickup Address: {order.pickupAddress}
+                  </p>
+                  {order.deliveryAgentId &&
+                    order.status === "out_for_delivery" &&
+                    order.deliveryAgentId.location && (
+                      <div className="mt-4">
+                        <h5 className="text-green-300 font-bold mb-2">
+                          Agent Location:
+                        </h5>
+                        <MapContainer
+                          center={
+                            order.deliveryAgentId.location.coordinates
+                              .length === 2
+                              ? [
+                                  order.deliveryAgentId.location.coordinates[1],
+                                  order.deliveryAgentId.location.coordinates[0],
+                                ]
+                              : [0, 0]
+                          }
+                          zoom={13}
+                          style={{ height: "200px", width: "100%" }}
+                        >
+                          <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+                          <Marker
+                            position={[
+                              order.deliveryAgentId.location.coordinates[1],
+                              order.deliveryAgentId.location.coordinates[0],
+                            ]}
+                          >
+                            <Popup>Agent: {order.deliveryAgentId.name}</Popup>
+                          </Marker>
+                        </MapContainer>
+                      </div>
+                    )}
                 </div>
               ))}
             </div>

@@ -9,7 +9,7 @@ const orderItemSchema = new mongoose.Schema({
   quantity: {
     type: Number,
     required: true,
-    min: 1
+    min: 0.01
   },
   price: {
     type: Number,
@@ -18,6 +18,11 @@ const orderItemSchema = new mongoose.Schema({
   total: {
     type: Number,
     required: true
+  },
+  image: {  // NEW FIELD to store product image URL
+    type: String,
+    trim: true,
+    default: '' // optional, fallback if no image is provided
   }
 });
 
@@ -50,11 +55,19 @@ const orderSchema = new mongoose.Schema({
     type: String,
     required: true
   },
+  mobileNumber: {
+    type: String,
+    required: true
+  },
   pickupAddress: {
     type: String,
     required: true
   },
   notes: {
+    type: String,
+    trim: true
+  },
+  supplierAddress: {
     type: String,
     trim: true
   },
@@ -68,10 +81,10 @@ const orderSchema = new mongoose.Schema({
   }
 });
 
-// Update the updatedAt field before saving
+// Auto-update updatedAt before saving
 orderSchema.pre('save', function(next) {
   this.updatedAt = Date.now();
   next();
 });
 
-module.exports = mongoose.model('Order', orderSchema); 
+module.exports = mongoose.model('Order', orderSchema);

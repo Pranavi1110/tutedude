@@ -67,4 +67,24 @@ router.post("/logout", (req, res) => {
   });
 });
 
+router.post("/user/address", async (req, res) => {
+  try {
+    const { supplierId, address } = req.body;
+    if (!supplierId || !address) {
+      return res.status(400).json({ message: "supplierId and address required" });
+    }
+    const user = await User.findById(supplierId);
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+    user.address = address;
+    await user.save();
+    res.json({ message: "Address updated", address });
+  } catch (error) {
+    console.error("Error updating address:", error);
+    res.status(500).json({ message: "Error updating address", error: error.message });
+  }
+});
+
+
 module.exports = router;

@@ -14,7 +14,7 @@ const Login = () => {
     e.preventDefault();
 
     if (!email || !password || !role) {
-      setError("Please fill all fields and select a role.");
+   setError("Please fill all fields and select a role.");
       return;
     }
 
@@ -22,27 +22,38 @@ const Login = () => {
     setError(null);
 
     try {
-      const response = await axios.post(
-        "http://localhost:5002/api/auth/login",
-        { email, password, role },
-        { withCredentials: true } // 🔐 Needed for session cookies
-      );
-
-      const user = response.data?.user;
-
-      if (!user) {
-        throw new Error("No user returned from server.");
-      }
-
-      // Navigate based on role
-      if (user.role === "vendor") {
-        navigate("/vendor");
-      } else if (user.role === "supplier") {
-        navigate("/supplier");
-      } else if (user.role === "delivery") {
-        navigate("/delivery");
+      let response;
+      if (role === "agent") {
+        response = await axios.post(
+          "http://localhost:5002/api/agent/login",
+          { email, password },
+          { withCredentials: true }
+        );
+        const agent = response.data?.agent;
+        if (!agent) throw new Error("No agent returned from server.");
+        localStorage.setItem("agentId", agent._id);
+        localStorage.setItem("loggedIn", "true");
+        navigate("/agent-dashboard");
       } else {
-        setError("Unknown user role");
+        response = await axios.post(
+          "http://localhost:5002/api/auth/login",
+          { email, password, role },
+          { withCredentials: true }
+        );
+        const user = response.data?.user;
+        // console.log("user",user.id)
+        if (!user) throw new Error("No user returned from server.");
+         localStorage.setItem("agentId", user.id);
+        localStorage.setItem("loggedIn", "true");
+        if (user.role === "vendor") {
+          navigate("/vendor");
+        } else if (user.role === "supplier") {
+          navigate("/supplier");
+        } else if (user.role === "delivery") {
+          navigate("/delivery");
+        } else {
+          setError("Unknown user role");
+        }
       }
     } catch (err) {
       console.error("Login error:", err);
@@ -107,7 +118,8 @@ const Login = () => {
             <option value="">Select Role</option>
             <option value="vendor">Vendor</option>
             <option value="supplier">Supplier</option>
-            <option value="delivery">Delivery Agent</option>
+            <option value="delivery">Delivery</option>
+            <option value="agent">Agent</option>
           </select>
         </div>
 
