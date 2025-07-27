@@ -32,10 +32,10 @@ const Header = () => {
         to="/"
         className="text-xl font-bold text-blue-300 hover:text-blue-100 transition-colors"
       >
-        RasaChain
+        thodaPyaazDalo!
       </Link>
       <div className="flex items-center gap-4">
-        <LanguageSwitcher />
+        {/* <LanguageSwitcher /> */}
         {user ? (
           <div className="flex items-center gap-4">
             <span className="text-gray-300 text-sm">

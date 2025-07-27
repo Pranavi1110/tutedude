@@ -4,17 +4,25 @@ import axios from "axios";
 
 const Login = () => {
   const [email, setEmail] = useState("");
+  const [mobile, setMobile] = useState("");
   const [password, setPassword] = useState(""); // not used in backend but still captured
   const [role, setRole] = useState("");
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
+  // Get address from localStorage if available (set by SupplierDashboard)
+  const getAddressFromStorage = () => {
+    return localStorage.getItem("user_address") || "";
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (!email || !password || !role) {
-   setError("Please fill all fields and select a role.");
+    if (!email || !mobile || !password || !role) {
+      setError(
+        "Please fill all fields, including mobile number, and select a role."
+      );
       return;
     }
 
@@ -22,39 +30,36 @@ const Login = () => {
     setError(null);
 
     try {
-      let response;
-      if (role === "agent") {
-        response = await axios.post(
-          "http://localhost:5002/api/agent/login",
-          { email, password },
-          { withCredentials: true }
-        );
-        const agent = response.data?.agent;
-        if (!agent) throw new Error("No agent returned from server.");
-        localStorage.setItem("agentId", agent._id);
-        localStorage.setItem("loggedIn", "true");
-        navigate("/agent-dashboard");
-      } else {
-        response = await axios.post(
-          "http://localhost:5002/api/auth/login",
-          { email, password, role },
-          { withCredentials: true }
-        );
-        const user = response.data?.user;
-        // console.log("user",user.id)
-        if (!user) throw new Error("No user returned from server.");
-         localStorage.setItem("agentId", user.id);
-        localStorage.setItem("loggedIn", "true");
-        if (user.role === "vendor") {
-          navigate("/vendor");
-        } else if (user.role === "supplier") {
-          navigate("/supplier");
-        } else if (user.role === "delivery") {
-          navigate("/delivery");
-        } else {
-          setError("Unknown user role");
-        }
+      const address = getAddressFromStorage();
+      const response = await axios.post(
+        "http://localhost:5002/api/auth/login",
+        { email, mobile, password, role, address },
+        { withCredentials: true } // 🔐 Needed for session cookies
+      );
+      const user = response.data?.user;
+
+      if (!user) {
+        throw new Error("No user returned from server.");
       }
+      localStorage.setItem("user", JSON.stringify(user));
+      localStorage.setItem("loggedIn", "true");
+      localStorage.setItem("adminId", user._id); // Save address for future use
+      // Navigate based on role
+      if (user.role === "vendor") {
+        navigate("/vendor");
+      } else if (user.role === "supplier") {
+        navigate("/supplier");
+      } else if (user.role === "delivery") {
+        navigate("/delivery");
+      } 
+      // else {
+      //   response = await axios.post(
+      //     "http://localhost:5002/api/auth/login",
+      //     { email, password, role },
+      //     { withCredentials: true }
+      //   );
+       
+      // }
     } catch (err) {
       console.error("Login error:", err);
       setError(
@@ -93,6 +98,20 @@ const Login = () => {
             required
           />
         </div>
+        <div>
+          <label className="block mb-2 font-semibold text-gray-100">
+            Mobile Number
+          </label>
+          <input
+            type="tel"
+            className="w-full px-4 py-3 border-2 border-green-700 rounded-xl bg-gray-900 text-gray-100"
+            value={mobile}
+            onChange={(e) => setMobile(e.target.value)}
+            required
+            pattern="[0-9]{10}"
+            placeholder="Enter 10-digit mobile number"
+          />
+        </div>
 
         <div>
           <label className="block mb-2 font-semibold text-gray-100">
@@ -106,7 +125,6 @@ const Login = () => {
             required
           />
         </div>
-
         <div>
           <label className="block mb-2 font-semibold text-gray-100">Role</label>
           <select

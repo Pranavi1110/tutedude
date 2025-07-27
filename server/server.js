@@ -49,7 +49,7 @@ app.use("/api/auth", require("./routes/auth"));
 app.use("/api/vendor", require("./routes/vendor"));
 app.use("/api/supplier", require("./routes/supplier"));
 app.use("/api/delivery", require("./routes/delivery"));
-app.use("/api/agent", require("./routes/agent"));
+app.use("/api/geocode", require("./routes/geocode"));
 
 // Health Check
 app.get("/api/health", (req, res) => {
