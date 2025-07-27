@@ -20,6 +20,7 @@ const Header = () => {
         withCredentials: true,
       });
       setUser(null);
+      localStorage.removeItem("user");
       navigate("/");
     } catch (err) {
       console.error("Logout failed:", err);
@@ -27,12 +28,12 @@ const Header = () => {
   };
 
   return (
-    <nav className="flex justify-between items-center mb-4 p-4 bg-gray-900 bg-opacity-80 rounded-lg shadow-lg">
+    <nav className="flex justify-between items-center mb-4 p-2 bg-gray-900 bg-opacity-80 rounded-lg shadow-lg">
       <Link
         to="/"
         className="text-xl font-bold text-blue-300 hover:text-blue-100 transition-colors"
       >
-        thodaPyaazDalo!
+        ThodaPyazzDalo!🧅
       </Link>
       <div className="flex items-center gap-4">
         {/* <LanguageSwitcher /> */}

@@ -112,7 +112,7 @@ const PlaceOrderForm = () => {
         deliveryAddress: form.location,
         mobileNumber: form.mobileNumber,
         pickupAddress: "Vendor Pickup Point",
-        notes: `Order placed by ${form.name}`,
+        notes:` Order placed by ${form.name}`,
       };
       return apiService.vendor.placeOrder(orderData); // returns order object
     });
@@ -145,7 +145,7 @@ const PlaceOrderForm = () => {
     localStorage.removeItem("vendorCart");
     localStorage.setItem("user", JSON.stringify(user));
     alert("Payment successful! Orders confirmed.");
-    navigate("/past-orders", { state: { user } });
+    navigate("/orders", { state: { user } });
   };
 
   // Payment + order flow
@@ -161,7 +161,7 @@ const PlaceOrderForm = () => {
         // Just place the order as pending, no payment
         localStorage.removeItem("vendorCart");
         localStorage.setItem("user", JSON.stringify(user));
-        alert("Order placed! You can pay later from your past orders.");
+        alert("Order placed! You can pay later from your orders.");
         navigate("/past-orders", { state: { user } });
         return;
       }
@@ -294,18 +294,10 @@ const PlaceOrderForm = () => {
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-gradient-to-r from-green-700 via-blue-700 to-purple-700 text-white py-3 rounded-full font-bold text-xl shadow-lg hover:scale-105 transition-transform duration-200"
-              onClick={(e) => handleSubmit(e, false)}
-            >
-              {loading ? "Processing..." : "Pay & Confirm"}
-            </button>
-            <button
-              type="button"
-              disabled={loading}
               className="w-full bg-gradient-to-r from-yellow-500 via-orange-500 to-pink-500 text-white py-3 rounded-full font-bold text-xl shadow-lg hover:scale-105 transition-transform duration-200"
               onClick={(e) => handleSubmit(e, true)}
             >
-              {loading ? "Processing..." : "Pay Later (Place Order)"}
+              {loading ? "Processing..." : "Place Order (Pay Later)"}
             </button>
           </div>
         </form>

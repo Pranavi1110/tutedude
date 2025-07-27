@@ -40,10 +40,11 @@ const DeliveryDashboard = () => {
 
           try {
             const response = await fetch(
-              `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}`
+              `http://localhost:5002/api/geocode/reverse?lat=${lat}&lon=${lon}`
             );
             const data = await response.json();
             const agentId = localStorage.getItem("agentId");
+            console.log(agentId);
             const fullAddress = data.display_name || "Address not found";
             setAddress(fullAddress);
             localStorage.setItem("user_address", fullAddress);
@@ -60,7 +61,7 @@ const DeliveryDashboard = () => {
               });
             }
           } catch (err) {
-            console.error("Error fetching address from OSM:", err);
+            console.error("Error fetching address from backend geocode:", err);
             setAddress("Address not found");
           }
         },
@@ -132,7 +133,7 @@ const DeliveryDashboard = () => {
   return (
     <div>
       {/* <Header /> */}
-      <div className="max-w-6xl mx-auto py-8 px-4">
+      <div className="max-w-6xl ms-8 py-8 px-4">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           {/* Available Deliveries */}
           <div className="bg-gradient-to-br from-orange-900 via-pink-900 to-purple-900 p-6 rounded-2xl shadow-xl">
@@ -187,7 +188,7 @@ const DeliveryDashboard = () => {
                     </div>
                     <div className="text-sm text-orange-200 mb-3">
                       <p>
-                        <strong>Pickup:</strong> {delivery.pickupAddress}
+                        <strong>Pickup:</strong> {delivery.supplierAddress}
                       </p>
                       <p>
                         <strong>Delivery:</strong> {delivery.deliveryAddress}
@@ -221,10 +222,9 @@ const DeliveryDashboard = () => {
                   .filter((delivery) => delivery.status !== "assigned")
                   .map((delivery) => {
                     // Calculate ETA using agentCoords, supplierCoords, vendorCoords
-                    let etaAgentToSupplier = null;
-                    let etaSupplierToVendor = null;
+
+                    let totalETA = null;
                     let debugReason = [];
-                    // agentCoords: [lng, lat], supplierCoords: [lng, lat], vendorCoords: [lng, lat]
                     const agentCoords =
                       Array.isArray(delivery.agentCoords) &&
                       delivery.agentCoords.length === 2
@@ -241,27 +241,23 @@ const DeliveryDashboard = () => {
                         ? delivery.vendorCoords
                         : null;
 
-                    if (agentCoords && supplierCoords) {
-                      const dist = getDistanceFromLatLonInMeters(
+                    if (agentCoords && supplierCoords && vendorCoords) {
+                      const dist1 = getDistanceFromLatLonInMeters(
                         agentCoords[1],
                         agentCoords[0],
                         supplierCoords[1],
                         supplierCoords[0]
                       );
-                      etaAgentToSupplier = estimateTimeMinutes(dist);
-                    } else {
-                      debugReason.push("missing agent/supplier coords");
-                    }
-                    if (supplierCoords && vendorCoords) {
-                      const dist = getDistanceFromLatLonInMeters(
+                      const dist2 = getDistanceFromLatLonInMeters(
                         supplierCoords[1],
                         supplierCoords[0],
                         vendorCoords[1],
                         vendorCoords[0]
                       );
-                      etaSupplierToVendor = estimateTimeMinutes(dist);
+                      totalETA =
+                        estimateTimeMinutes(dist1) + estimateTimeMinutes(dist2);
                     } else {
-                      debugReason.push("missing supplier/vendor coords");
+                      debugReason.push("missing agent/supplier/vendor coords");
                     }
 
                     return (
@@ -304,43 +300,17 @@ const DeliveryDashboard = () => {
                             <strong>Delivery:</strong>{" "}
                             {delivery.deliveryLocation}
                           </p>
-                          {etaAgentToSupplier !== null && (
+                          {/* {totalETA !== null ? (
                             <p className="text-green-200 font-bold mt-2">
-                              ETA Agent → Supplier: {etaAgentToSupplier} min
+                              Total ETA: {totalETA} min
                             </p>
-                          )}
-                          {etaSupplierToVendor !== null && (
-                            <p className="text-green-200 font-bold mt-2">
-                              ETA Supplier → Vendor: {etaSupplierToVendor} min
-                            </p>
-                          )}
-                          {etaAgentToSupplier === null &&
-                            etaSupplierToVendor === null &&
+                          ) : (
                             debugReason.length > 0 && (
                               <p className="text-xs text-red-300 mt-2">
-                                <div className="flex flex-wrap gap-2 mb-2">
-                                  {delivery.orderId?.items?.map((item, idx) => (
-                                    <div
-                                      key={idx}
-                                      className="flex flex-col items-center w-20"
-                                    >
-                                      {item.productId?.image &&
-                                      item.productId.image !== "" ? (
-                                        <img
-                                          src={item.productId.image}
-                                          alt={
-                                            item.productId?.name || "Product"
-                                          }
-                                          className="w-16 h-16 object-cover rounded mb-1 border"
-                                        />
-                                      ) : null}
-                                    
-                                    </div>
-                                  ))}
-                                </div>
                                 ETA not shown: {debugReason.join(", ")}
                               </p>
-                            )}
+                            )
+                          )} */}
                         </div>
                         {delivery.status === "out_for_delivery" && (
                           <button

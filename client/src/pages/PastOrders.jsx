@@ -2,37 +2,52 @@ import React, { useEffect, useState, useCallback } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import apiService from "../services/api";
 
-// Utility to convert orders to CSV
+// Utility: Load Razorpay Script
+function loadRazorpayScript() {
+  return new Promise((resolve) => {
+    if (window.Razorpay) return resolve();
+    const script = document.createElement("script");
+    script.src = "https://checkout.razorpay.com/v1/checkout.js";
+    script.onload = resolve;
+    document.body.appendChild(script);
+  });
+}
+
+// Utility: Convert orders to CSV
 function ordersToCSV(orders) {
-  if (!orders || orders.length === 0) return '';
+  if (!orders || orders.length === 0) return "";
   const header = [
-    'Order ID',
-    'Date',
-    'Supplier',
-    'Delivery Address',
-    'Total Amount',
-    'Status',
-    'Items'
+    "Order ID",
+    "Date",
+    "Supplier",
+    "Delivery Address",
+    "Total Amount",
+    "Status",
+    "Items",
   ];
-  const rows = orders.map(order => {
-    const items = order.items.map(item => {
-      const name = item.productId?.name || 'Product';
-      return `${name} (Qty: ${item.quantity} @ ₹${item.price})`;
-    }).join('; ');
+  const rows = orders.map((order) => {
+    const items = order.items
+      .map((item) => {
+        const name = item.productId?.name || "Product";
+        return `${name} (Qty: ${item.quantity} @ ₹${item.price})`;
+      })
+      .join("; ");
     return [
       order._id,
       new Date(order.createdAt).toLocaleString(),
-      order.supplierId?.name || 'Unknown',
+      order.supplierId?.name || "Unknown",
       order.deliveryAddress,
       order.totalAmount,
-      order.status || 'Placed',
-      items
-    ].map(field => `"${String(field).replace(/"/g, '""')}"`).join(',');
+      order.status || "Placed",
+      items,
+    ]
+      .map((field) => `"${String(field).replace(/"/g, '""')}"`)
+      .join(",");
   });
-  return [header.join(','), ...rows].join('\r\n');
+  return [header.join(","), ...rows].join("\r\n");
 }
 
-const PastOrders = () => {
+const PastOrders= () => {
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -42,7 +57,6 @@ const PastOrders = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 5;
   const totalPages = Math.ceil(orders.length / itemsPerPage);
@@ -50,6 +64,47 @@ const PastOrders = () => {
     (currentPage - 1) * itemsPerPage,
     currentPage * itemsPerPage
   );
+
+  // Pay Now
+  const handlePayNow = async (order) => {
+    if (!user || !user._id) {
+      alert("User not loaded. Please refresh and try again.");
+      return;
+    }
+    try {
+      await loadRazorpayScript();
+      const options = {
+        key: "rzp_test_sr1UaCzPtw1nDc", // Test key
+        amount: Math.round(order.totalAmount * 100),
+        currency: "INR",
+        name: "Tutedude Order Payment",
+        description: `Payment for Order #${order._id}`,
+        handler: async () => {
+          await apiService.supplier.updateOrderStatus(order._id, "paid");
+          alert("Payment successful! Order marked as paid.");
+          const data = await apiService.vendor.getVendorOrders(user._id);
+          setOrders(data);
+        },
+        prefill: {
+          name: user?.name || "",
+          email: user?.email || "",
+        },
+        theme: { color: "#6366f1" },
+        modal: {
+          ondismiss: function () {
+            alert("Payment cancelled. Order remains pending.");
+          },
+        },
+      };
+      const rzp = new window.Razorpay(options);
+      rzp.on("payment.failed", function () {
+        alert("Payment failed. Order remains pending. Try again.");
+      });
+      rzp.open();
+    } catch (err) {
+      alert("Error opening payment window: " + (err.message || err));
+    }
+  };
 
   // Normalize user
   useEffect(() => {
@@ -65,7 +120,7 @@ const PastOrders = () => {
     setCheckedUser(true);
   }, [location.state]);
 
-  // Fetch past orders
+  // Fetch orders
   useEffect(() => {
     if (!user || !user._id) return;
     const fetchOrders = async () => {
@@ -86,28 +141,28 @@ const PastOrders = () => {
   // Export CSV
   const handleExportCSV = () => {
     const csv = ordersToCSV(orders);
-    const blob = new Blob([csv], { type: 'text/csv' });
+    const blob = new Blob([csv], { type: "text/csv" });
     const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
+    const a = document.createElement("a");
     a.href = url;
-    a.download = 'past_orders.csv';
+    a.download = "past_orders.csv";
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
   };
 
-  // Reorder functionality
+  // Order Again
   const handleOrderAgain = useCallback((order) => {
     const cart = order.items.map((item) => ({
       ...item.productId,
       quantity: item.quantity,
       price: item.price,
-      image: item.image || item.productId?.image || "", // Keep image when adding back to cart
+      image: item.image || item.productId?.image || "",
       supplierId: order.supplierId?._id || order.supplierId,
     }));
     localStorage.setItem("vendorCart", JSON.stringify(cart));
-    window.location.href = `/place-order?orderAgain=1`;
+    window.location.href = "/place-order?orderAgain=1";
   }, []);
 
   if (checkedUser && (!user || !user._id)) {
@@ -120,17 +175,17 @@ const PastOrders = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-blue-900 to-purple-900 flex flex-col items-center p-8">
-      <div className="w-full max-w-2xl flex flex-col gap-4 mb-8">
+      <div className=" min-w-6xl flex flex-col gap-4 mb-8">
         <div className="flex justify-between items-center">
           <button
-            className="bg-blue-500 hover:bg-blue-600 px-4 py-2 rounded-full font-bold shadow"
-            onClick={() => navigate('/vendor', { state: { user } })}
+            className="bg-blue-500 hover:bg-blue-600 px-4 py-2 rounded-full font-bold shadow text-white"
+            onClick={() => navigate("/vendor", { state: { user } })}
           >
             Go Back to Dashboard
           </button>
           {orders.length > 0 && (
             <button
-              className="bg-green-500 hover:bg-green-600 text-black px-4 py-2 rounded-full font-bold shadow"
+              className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-full font-bold shadow"
               onClick={handleExportCSV}
             >
               Export as CSV
@@ -179,9 +234,10 @@ const PastOrders = () => {
                       key={idx}
                       className="flex items-center gap-4 bg-blue-800 p-3 rounded-lg"
                     >
-                      {/* Product Image */}
                       <img
-                        src={item.image || item.productId?.image || "/placeholder.png"}
+                        src={
+                          item.image || item.productId?.image || "/placeholder.png"
+                        }
                         alt={item.productId?.name || "Product"}
                         className="w-16 h-16 object-cover rounded-md border border-blue-400"
                       />
@@ -198,18 +254,17 @@ const PastOrders = () => {
                 </ul>
               </div>
 
-              {/* Actions */}
               <div className="flex flex-wrap gap-4 mt-4">
                 <button
-                  className="bg-green-600 hover:bg-green-700 text-black px-4 py-2 rounded-full font-bold shadow"
+                  className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-full font-bold shadow"
                   onClick={() => handleOrderAgain(order)}
                 >
                   Order Again
                 </button>
-                {order.status?.toLowerCase().includes("pending") && (
+                {order.status?.toLowerCase() === "ready_for_pickup" && (
                   <button
                     className="bg-yellow-500 hover:bg-yellow-600 text-black px-4 py-2 rounded-full font-bold shadow"
-                    onClick={() => alert("Handle Razorpay flow here")}
+                    onClick={() => handlePayNow(order)}
                   >
                     Pay Now
                   </button>
@@ -217,13 +272,13 @@ const PastOrders = () => {
                 {order.supplierId?.mobile || order.supplierId?.phone ? (
                   <a
                     href={`tel:${order.supplierId.mobile || order.supplierId.phone}`}
-                    className="bg-blue-500 text-black px-4 py-2 rounded-full font-bold shadow flex items-center"
+                    className=" px-4 py-2 rounded-full font-bold shadow flex items-center"
                   >
                     📞 Contact Supplier
                   </a>
                 ) : (
                   <button
-                    className="bg-gray-400 text-black px-4 py-2 rounded-full font-bold shadow cursor-not-allowed"
+                    className="bg-gray-400 text-white px-4 py-2 rounded-full font-bold shadow cursor-not-allowed"
                     disabled
                   >
                     No Contact Available
@@ -239,7 +294,7 @@ const PastOrders = () => {
               <button
                 onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
                 disabled={currentPage === 1}
-                className="px-3 py-1 bg-blue-700 rounded"
+                className="px-3 py-1 bg-blue-700 text-white rounded"
               >
                 Prev
               </button>
@@ -250,7 +305,7 @@ const PastOrders = () => {
                   className={`px-3 py-1 rounded ${
                     currentPage === idx + 1
                       ? "bg-pink-600"
-                      : "bg-blue-200 text-blue-900"
+                      : "bg-blue-200 text-blue-800"
                   }`}
                 >
                   {idx + 1}
@@ -259,7 +314,7 @@ const PastOrders = () => {
               <button
                 onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
                 disabled={currentPage === totalPages}
-                className="px-3 py-1 bg-blue-700 rounded"
+                className="px-3 py-1 bg-blue-700 text-white rounded"
               >
                 Next
               </button>

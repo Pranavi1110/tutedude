@@ -43,7 +43,7 @@ const Login = () => {
       }
       localStorage.setItem("user", JSON.stringify(user));
       localStorage.setItem("loggedIn", "true");
-      localStorage.setItem("adminId", user._id); // Save address for future use
+      localStorage.setItem("agentId", user.id); // Save address for future use
       // Navigate based on role
       if (user.role === "vendor") {
         navigate("/vendor");
@@ -71,9 +71,9 @@ const Login = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-900 via-blue-900 to-purple-900 px-4">
+    <div className=" min-w-6xl ms-9 flex  me-8 items-center justify-center bg-gradient-to-br from-gray-900 via-blue-900 to-purple-900 px-4">
       <form
-        className="w-full max-w-md bg-transparent rounded-3xl shadow-2xl p-8 md:p-12 flex flex-col gap-6"
+        className="bg-transparent min-w-xl   rounded-3xl shadow-2xl p-8 md:p-12 flex flex-col gap-6"
         onSubmit={handleSubmit}
       >
         <h2 className="text-4xl font-extrabold mb-2 text-transparent bg-clip-text bg-gradient-to-r from-blue-300 via-purple-300 to-pink-300 animate-pulse text-center">
@@ -137,7 +137,7 @@ const Login = () => {
             <option value="vendor">Vendor</option>
             <option value="supplier">Supplier</option>
             <option value="delivery">Delivery</option>
-            <option value="agent">Agent</option>
+            {/* <option value="agent">Agent</option> */}
           </select>
         </div>
 
@@ -149,12 +149,12 @@ const Login = () => {
           {loading ? "Logging in..." : "Login"}
         </button>
 
-        <div className="text-center text-gray-300 text-sm mt-4">
+        {/* <div className="text-center text-gray-300 text-sm mt-4">
           <p>Demo Credentials:</p>
           <p>Vendor: vendor@example.com / password123</p>
           <p>Supplier: supplier@example.com / password123</p>
           <p>Delivery: delivery@example.com / password123</p>
-        </div>
+        </div> */}
       </form>
     </div>
   );

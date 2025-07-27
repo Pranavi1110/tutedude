@@ -29,9 +29,9 @@ router.post("/accept/:orderId", async (req, res) => {
     let vendorAddress = "",
       supplierAddress = "",
       agentAddress = "";
-    // let vendorCoords = null,
-    //   supplierCoords = null,
-    //   agentCoords = null;
+    let vendorCoords = null,
+      supplierCoords = null,
+      agentCoords = null;
     // Vendor
     if (order.vendorId) {
       const vendorUser = await User.findOne({
@@ -110,13 +110,13 @@ router.post("/accept/:orderId", async (req, res) => {
       orderId: order._id,
       deliveryAgentId,
       status: "out_for_delivery",
-      pickupLocation: order.supplierAddress  || "",
+      pickupLocation: order.supplierAddress || "",
       deliveryLocation: order.deliveryAddress || "",
       image: order.items.image || "",
-      // // Store coordinates for ETA calculation
-      // vendorCoords,
-      // supplierCoords,
-      // agentCoords,
+      // Store coordinates for ETA calculation
+      vendorCoords,
+      supplierCoords,
+      agentCoords,
     });
     await deliveryDoc.save();
 

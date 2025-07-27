@@ -44,7 +44,9 @@ const apiService = {
       const data = await apiRequest(`/vendor/recommendations/${vendorId}`);
       // Fallback: If no recommendations, fetch some popular products
       if (!data || data.length === 0) {
-        console.warn("No personalized recommendations, falling back to popular products.");
+        console.warn(
+          "No personalized recommendations, falling back to popular products."
+        );
         const trending = await this.getTrendingProducts();
         return trending.slice(0, 5);
       }
@@ -54,7 +56,6 @@ const apiService = {
     // Get order stats for charting
     async getOrderStats(vendorId) {
       return apiRequest(`/vendor/order-stats/${vendorId}`);
-      
     },
 
     // Get trending products (past 7 days demand)
@@ -62,7 +63,9 @@ const apiService = {
       const data = await apiRequest(`/vendor/trending-products`);
       // Fallback: If no trending, just fetch all products and pick top 5
       if (!data || data.length === 0) {
-        console.warn("No trending products found, falling back to top available products.");
+        console.warn(
+          "No trending products found, falling back to top available products."
+        );
         const all = await this.getProducts();
         return all.slice(0, 5);
       }
@@ -133,7 +136,7 @@ const apiService = {
         )}`;
         if (radius) query += `&radius=${encodeURIComponent(radius)}`;
       }
-      return apiService.request(`/delivery/available${query}`);
+      return apiRequest(`/delivery/available${query}`);
     },
     async acceptDelivery(orderId, deliveryAgentId) {
       return apiRequest(`/delivery/accept/${orderId}`, {
