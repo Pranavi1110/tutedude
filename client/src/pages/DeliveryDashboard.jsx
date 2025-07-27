@@ -18,11 +18,11 @@ function getDistanceFromLatLonInMeters(lat1, lon1, lat2, lon2) {
 }
 
 // Estimate ETA
-function estimateTimeMinutes(distanceMeters, speedKmph = 30) {
-  const speedMps = (speedKmph * 1000) / 3600;
-  const timeSec = distanceMeters / speedMps;
-  return Math.round(timeSec / 60);
-}
+// function estimateTimeMinutes(distanceMeters, speedKmph = 30) {
+//   const speedMps = (speedKmph * 1000) / 3600;
+//   const timeSec = distanceMeters / speedMps;
+//   return Math.round(timeSec / 60);
+// }
 
 const DeliveryDashboard = () => {
   const { t } = useTranslation();
